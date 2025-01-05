@@ -3,6 +3,8 @@ from typing import List
 
 
 class Byte:
+    """A basic unit of information capable of holding 64 distinct values."""
+
     def __init__(self, val: int) -> None:
         if val >= 64:
             raise ValueError("Byte can only represent up to 6 bits")
