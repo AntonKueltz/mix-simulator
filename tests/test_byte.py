@@ -28,3 +28,7 @@ class TestByte(TestCase):
         expected = [Byte(63), Byte(63), Byte(63), Byte(63), Byte(63)]
         actual = int_to_bytes(1_073_741_823)
         self.assertEqual(expected, actual)
+
+        expected = [Byte(41), Byte(50), Byte(0), Byte(0), Byte(0)]
+        actual = int_to_bytes(3241, padding=5)
+        self.assertEqual(expected, actual)
