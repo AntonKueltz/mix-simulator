@@ -84,7 +84,8 @@ class TestInstruction(TestCase):
         self.assertEqual(4, state.rA.r5)
 
         # LDA 1998,2(3:5)
-        instruction = Instruction(1998, 2, (3, 5), OpCode.LDA)
+        state.rI1.update(False, Byte(2), Byte(0))
+        instruction = Instruction(1998, 1, (3, 5), OpCode.LDA)
         instruction.execute()
 
         self.assertEqual(False, state.rA.sign)

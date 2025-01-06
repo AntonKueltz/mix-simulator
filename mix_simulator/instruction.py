@@ -112,7 +112,7 @@ class Instruction:
         from mix_simulator.simulator import state
 
         # load word at address
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
 
         # select relevant fields
@@ -159,7 +159,7 @@ class Instruction:
                 raise ValueError(f"Unknown register {register}")
 
         # get the word to update
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
 
         # store the data in the word
@@ -176,7 +176,7 @@ class Instruction:
     def _store_j(self) -> None:
         from mix_simulator.simulator import state
 
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
 
         # TODO - this only supports F = (0:2)
@@ -187,7 +187,7 @@ class Instruction:
     def _store_zero(self) -> None:
         from mix_simulator.simulator import state
 
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
 
         word.sign = False
@@ -198,7 +198,7 @@ class Instruction:
         from mix_simulator.simulator import state
 
         # load the value in the instruction as an integer
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(reversed(data), sign)
@@ -225,7 +225,7 @@ class Instruction:
         from mix_simulator.simulator import state
 
         # load the value in the instruction as an integer
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(reversed(data), sign)
@@ -246,7 +246,7 @@ class Instruction:
         from mix_simulator.simulator import state
 
         # load the value in the instruction as an integer
-        m = self.address + self.index
+        m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(reversed(data), sign)
@@ -269,3 +269,24 @@ class Instruction:
         # store remainder back into X
         result = int_to_bytes(remainder, padding=BYTES_IN_WORD)
         state.rX.update(sign, *result)
+
+    def _get_address(self) -> int:
+        from mix_simulator.simulator import state
+
+        match self.index:
+            case 0:
+                return self.address
+            case 1:
+                return self.address + int(state.rI1)
+            case 2:
+                return self.address + int(state.rI2)
+            case 3:
+                return self.address + int(state.rI3)
+            case 4:
+                return self.address + int(state.rI4)
+            case 5:
+                return self.address + int(state.rI5)
+            case 6:
+                return self.address + int(state.rI6)
+            case _:
+                raise ValueError(f"Index must be value in range 0-6. Got {self.index}")
