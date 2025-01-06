@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Reversible
 from typing import List
 
 BITS_IN_BYTE = 6
@@ -28,6 +28,7 @@ class Byte:
 
 
 def int_to_bytes(val: int, padding: int = 0) -> List[Byte]:
+    """Returns the passed integer in _little endian_ (0 index is lowest byte) representation."""
     val = abs(val)
     result: List[Byte] = []
 
@@ -44,10 +45,11 @@ def int_to_bytes(val: int, padding: int = 0) -> List[Byte]:
     return result
 
 
-def bytes_to_int(bs: Iterable[Byte], sign: bool = False) -> int:
+def bytes_to_int(bs: Reversible[Byte], sign: bool = False) -> int:
+    """Interprets the passed bytes as a _big endian_ (0 index is highest byte) integer."""
     result = 0
 
-    for i, b in enumerate(bs):
+    for i, b in enumerate(reversed(bs)):
         result += b.val << (BITS_IN_BYTE * i)
 
     return -result if sign else result

@@ -1,71 +1,60 @@
+from typing import Tuple
 from unittest import TestCase
 
-from mix_simulator.byte import Byte, int_to_bytes
+from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import WordRegister
 from mix_simulator.word import Word
 
+from parameterized import parameterized  # type: ignore
+
 
 class TestInstruction(TestCase):
-    def test_from_word_LDA(self) -> None:
-        # LDA 2000,2(0:3)
-        [b1, b2] = int_to_bytes(2000)
-        b3 = Byte(2)
-        b4 = Byte(3)
-        b5 = Byte(8)
-        word = Word(False, b1, b2, b3, b4, b5)
+    @parameterized.expand(
+        [
+            # LDA 2000,2(0:3)
+            (
+                (False, (Byte(31), Byte(16), Byte(2), Byte(3), Byte(8))),
+                (2000, 2, (0, 3), OpCode.LDA),
+            ),
+            # LDA 2000,2(1:3)
+            (
+                (False, (Byte(31), Byte(16), Byte(2), Byte(11), Byte(8))),
+                (2000, 2, (1, 3), OpCode.LDA),
+            ),
+            # LDA 2000(1:3)
+            (
+                (False, (Byte(31), Byte(16), Byte(0), Byte(11), Byte(8))),
+                (2000, 0, (1, 3), OpCode.LDA),
+            ),
+            # LDA 2000
+            (
+                (False, (Byte(31), Byte(16), Byte(0), Byte(5), Byte(8))),
+                (2000, 0, (0, 5), OpCode.LDA),
+            ),
+            # LDA -2000,4
+            (
+                (True, (Byte(31), Byte(16), Byte(4), Byte(5), Byte(8))),
+                (-2000, 4, (0, 5), OpCode.LDA),
+            ),
+        ]
+    )
+    def test_from_word_LDA(
+        self,
+        test_input: Tuple[bool, Tuple[Byte, Byte, Byte, Byte, Byte]],
+        expected: Tuple[int, int, Tuple[int, int], OpCode],
+    ) -> None:
+        sign, data = test_input
+        eaddress, eindex, emodification, eopcode = expected
 
+        word = Word(sign, *data)
         instruction = Instruction.from_word(word)
 
-        self.assertEqual(OpCode.LDA, instruction.opcode)
-        self.assertEqual(2000, instruction.address)
-        self.assertEqual(2, instruction.index)
-        self.assertEqual((0, 3), instruction.modification)
-
-        # LDA 2000,2(1:3)
-        b4 = Byte(11)
-        word = Word(False, b1, b2, b3, b4, b5)
-
-        instruction = Instruction.from_word(word)
-
-        self.assertEqual(OpCode.LDA, instruction.opcode)
-        self.assertEqual(2000, instruction.address)
-        self.assertEqual(2, instruction.index)
-        self.assertEqual((1, 3), instruction.modification)
-
-        # LDA 2000(1:3)
-        b3 = Byte(0)
-        word = Word(False, b1, b2, b3, b4, b5)
-
-        instruction = Instruction.from_word(word)
-
-        self.assertEqual(OpCode.LDA, instruction.opcode)
-        self.assertEqual(2000, instruction.address)
-        self.assertEqual(0, instruction.index)
-        self.assertEqual((1, 3), instruction.modification)
-
-        # LDA 2000
-        b4 = Byte(5)
-        word = Word(False, b1, b2, b3, b4, b5)
-
-        instruction = Instruction.from_word(word)
-
-        self.assertEqual(OpCode.LDA, instruction.opcode)
-        self.assertEqual(2000, instruction.address)
-        self.assertEqual(0, instruction.index)
-        self.assertEqual((0, 5), instruction.modification)
-
-        # LDA -2000,4
-        b3 = Byte(4)
-        word = Word(True, b1, b2, b3, b4, b5)
-
-        instruction = Instruction.from_word(word)
-
-        self.assertEqual(OpCode.LDA, instruction.opcode)
-        self.assertEqual(-2000, instruction.address)
-        self.assertEqual(4, instruction.index)
-        self.assertEqual((0, 5), instruction.modification)
+        self.assertEqual(eaddress, instruction.address)
+        self.assertEqual(eindex, instruction.index)
+        self.assertEqual(emodification, instruction.modification)
+        self.assertEqual(eopcode, instruction.opcode)
 
     def test_execute_LDA(self) -> None:
         from mix_simulator.simulator import state

@@ -14,7 +14,7 @@ class WordRegister:
     r5: Byte
 
     def __int__(self) -> int:
-        return bytes_to_int((self.r5, self.r4, self.r3, self.r2, self.r1), self.sign)
+        return bytes_to_int((self.r1, self.r2, self.r3, self.r4, self.r5), self.sign)
 
     def update(
         self,
@@ -48,7 +48,7 @@ class IndexRegister:
     i5: Byte
 
     def __int__(self) -> int:
-        return bytes_to_int((self.i5, self.i4), self.sign)
+        return bytes_to_int((self.i4, self.i5), self.sign)
 
     def update(self, sign: bool, i5: Byte = Byte(0), i4: Byte = Byte(0)) -> None:
         self.sign = sign

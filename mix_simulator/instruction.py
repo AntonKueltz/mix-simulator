@@ -128,23 +128,25 @@ class Instruction:
             sign = not sign
 
         # set the value
+        # flip the endianness of the data since the update function uses little endian
+        little_endian_data = reversed(data)
         match register:
             case "A":
-                state.rA.update(sign, *reversed(data))
+                state.rA.update(sign, *little_endian_data)
             case "X":
-                state.rX.update(sign, *reversed(data))
+                state.rX.update(sign, *little_endian_data)
             case "I1":
-                state.rI1.update(sign, *reversed(data))
+                state.rI1.update(sign, *little_endian_data)
             case "I2":
-                state.rI2.update(sign, *reversed(data))
+                state.rI2.update(sign, *little_endian_data)
             case "I3":
-                state.rI3.update(sign, *reversed(data))
+                state.rI3.update(sign, *little_endian_data)
             case "I4":
-                state.rI4.update(sign, *reversed(data))
+                state.rI4.update(sign, *little_endian_data)
             case "I5":
-                state.rI5.update(sign, *reversed(data))
+                state.rI5.update(sign, *little_endian_data)
             case "I6":
-                state.rI6.update(sign, *reversed(data))
+                state.rI6.update(sign, *little_endian_data)
             case _:
                 raise ValueError(f"Unknown register {register}")
 
@@ -201,7 +203,7 @@ class Instruction:
         m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
-        v = bytes_to_int(reversed(data), sign)
+        v = bytes_to_int(data, sign)
 
         # add V to A
         a = int(state.rA)
@@ -228,7 +230,7 @@ class Instruction:
         m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
-        v = bytes_to_int(reversed(data), sign)
+        v = bytes_to_int(data, sign)
 
         # multiple A by V
         a = int(state.rA)
@@ -249,7 +251,7 @@ class Instruction:
         m = self._get_address()
         word = state.memory[m]
         sign, data = word.load_fields(*self.modification)
-        v = bytes_to_int(reversed(data), sign)
+        v = bytes_to_int(data, sign)
 
         # divide AX by V
         a = int(state.rA)
