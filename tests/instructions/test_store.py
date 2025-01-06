@@ -25,37 +25,37 @@ class TestStore(TestCase):
         [
             # STA 2000
             (
-                Instruction(2000, 0, (0, 5), OpCode.STA),
+                Instruction(2000, 0, 5, OpCode.STA),
                 Word(False, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0)),
             ),
             # STA 1998,1
             (
-                Instruction(1998, 1, (0, 5), OpCode.STA),
+                Instruction(1998, 1, 5, OpCode.STA),
                 Word(False, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0)),
             ),
             # STA 2000(1:5)
             (
-                Instruction(2000, 0, (1, 5), OpCode.STA),
+                Instruction(2000, 0, 8 + 5, OpCode.STA),
                 Word(True, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0)),
             ),
             # STA 2000(5:5)
             (
-                Instruction(2000, 0, (5, 5), OpCode.STA),
+                Instruction(2000, 0, 5 * 8 + 5, OpCode.STA),
                 Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(0)),
             ),
             # STA 2000(2:2)
             (
-                Instruction(2000, 0, (2, 2), OpCode.STA),
+                Instruction(2000, 0, 2 * 8 + 2, OpCode.STA),
                 Word(True, Byte(1), Byte(0), Byte(3), Byte(4), Byte(5)),
             ),
             # STA 2000(2:3)
             (
-                Instruction(2000, 0, (2, 3), OpCode.STA),
+                Instruction(2000, 0, 2 * 8 + 3, OpCode.STA),
                 Word(True, Byte(1), Byte(9), Byte(0), Byte(4), Byte(5)),
             ),
             # STA 2000(0:1)
             (
-                Instruction(2000, 0, (0, 1), OpCode.STA),
+                Instruction(2000, 0, 1, OpCode.STA),
                 Word(False, Byte(0), Byte(2), Byte(3), Byte(4), Byte(5)),
             ),
         ]
@@ -76,17 +76,17 @@ class TestStore(TestCase):
         [
             # STZ 2000
             (
-                Instruction(2000, 0, (0, 2), OpCode.STJ),
+                Instruction(2000, 0, 2, OpCode.STJ),
                 Word(False, Byte(10), Byte(11), Byte(3), Byte(4), Byte(5)),
             ),
             # STZ 2000(1:2)
             (
-                Instruction(2000, 0, (1, 2), OpCode.STJ),
+                Instruction(2000, 0, 8 + 2, OpCode.STJ),
                 Word(True, Byte(10), Byte(11), Byte(3), Byte(4), Byte(5)),
             ),
             # STZ 1998,1(2:2)
             (
-                Instruction(1998, 1, (2, 2), OpCode.STJ),
+                Instruction(1998, 1, 2 * 8 + 2, OpCode.STJ),
                 Word(True, Byte(1), Byte(11), Byte(3), Byte(4), Byte(5)),
             ),
         ]
@@ -103,17 +103,17 @@ class TestStore(TestCase):
         [
             # STZ 2000
             (
-                Instruction(2000, 0, (0, 5), OpCode.STZ),
+                Instruction(2000, 0, 5, OpCode.STZ),
                 Word(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(0)),
             ),
             # STZ 2000(0:2)
             (
-                Instruction(2000, 0, (0, 2), OpCode.STZ),
+                Instruction(2000, 0, 2, OpCode.STZ),
                 Word(False, Byte(0), Byte(0), Byte(3), Byte(4), Byte(5)),
             ),
             # STZ 1998,1(3:5)
             (
-                Instruction(1998, 1, (3, 5), OpCode.STZ),
+                Instruction(1998, 1, 3 * 8 + 5, OpCode.STZ),
                 Word(True, Byte(1), Byte(2), Byte(0), Byte(0), Byte(0)),
             ),
         ]

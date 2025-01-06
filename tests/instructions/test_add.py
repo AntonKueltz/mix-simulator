@@ -14,7 +14,7 @@ class TestAdd(TestCase):
         STATE.rA.update(False, Byte(22), Byte(2), Byte(1), Byte(18), Byte(19))
         expected = WordRegister(False, Byte(20), Byte(54), Byte(6), Byte(3), Byte(8))
 
-        instruction = Instruction(1000, 0, (0, 5), OpCode.ADD)
+        instruction = Instruction(1000, 0, 5, OpCode.ADD)
         instruction.execute()
 
         self.assertEqual(expected, STATE.rA)

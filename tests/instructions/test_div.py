@@ -16,7 +16,7 @@ class TestDiv(TestCase):
         expected_a = WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(5))
         expected_x = WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(2))
 
-        instruction = Instruction(1000, 0, (0, 5), OpCode.DIV)
+        instruction = Instruction(1000, 0, 5, OpCode.DIV)
         instruction.execute()
 
         self.assertEqual(expected_a, STATE.rA)

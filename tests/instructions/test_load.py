@@ -20,9 +20,9 @@ class TestLoad(TestCase):
     @parameterized.expand(
         [
             # LDA 2000
-            (Instruction(2000, 0, (0, 5), OpCode.LDA), (True, 1, 16, 3, 5, 4)),
+            (Instruction(2000, 0, 5, OpCode.LDA), (True, 1, 16, 3, 5, 4)),
             # LDA 1998,1(3:5)
-            (Instruction(1998, 1, (3, 5), OpCode.LDA), (False, 0, 0, 3, 5, 4)),
+            (Instruction(1998, 1, 3 * 8 + 5, OpCode.LDA), (False, 0, 0, 3, 5, 4)),
         ]
     )
     def test_execute_word_register(
@@ -41,7 +41,7 @@ class TestLoad(TestCase):
 
     def test_execute_index_register(self) -> None:
         # LD1 2000(1:2)
-        instruction = Instruction(2000, 0, (1, 2), OpCode.LD1)
+        instruction = Instruction(2000, 0, 8 + 2, OpCode.LD1)
         instruction.execute()
 
         self.assertEqual(False, STATE.rI1.sign)
@@ -50,6 +50,6 @@ class TestLoad(TestCase):
 
     def test_execute_index_register_too_many_bytes(self) -> None:
         # LD1 2000
-        instruction = Instruction(2000, 0, (0, 5), OpCode.LD1)
+        instruction = Instruction(2000, 0, 5, OpCode.LD1)
         with self.assertRaises(ValueError):
             instruction.execute()  # try to load more than 2 bytes into an index register

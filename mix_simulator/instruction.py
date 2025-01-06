@@ -13,15 +13,15 @@ class Instruction:
 
     address: int
     index: int
+    field: int
     modification: Tuple[int, int]
     opcode: OpCode
 
-    def __init__(
-        self, address: int, index: int, modification: Tuple[int, int], opcode: OpCode
-    ) -> None:
+    def __init__(self, address: int, index: int, field: int, opcode: OpCode) -> None:
         self.address = address
         self.index = index
-        self.modification = modification
+        self.field = field
+        self.modification = divmod(self.field, 8)
         self.opcode = opcode
 
     @staticmethod
@@ -31,10 +31,10 @@ class Instruction:
             address *= -1
 
         index = word.b3.val
-        modification = divmod(word.b4.val, 8)
+        field = word.b4.val
         opcode = OpCode(word.b5.val)
 
-        return Instruction(address, index, modification, opcode)
+        return Instruction(address, index, field, opcode)
 
     def execute(self) -> None:
         match self.opcode:
