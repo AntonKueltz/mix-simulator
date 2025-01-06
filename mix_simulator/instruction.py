@@ -3,7 +3,7 @@ from typing import Tuple
 
 from mix_simulator.byte import BITS_IN_BYTE, bytes_to_int, int_to_bytes
 from mix_simulator.opcode import OpCode
-from mix_simulator.register import ZERO_REGISTER
+from mix_simulator.register import ZERO_REGISTER, IndexRegister, WordRegister
 from mix_simulator.simulator import STATE
 from mix_simulator.word import BYTES_IN_WORD, Word
 
@@ -226,10 +226,6 @@ class Instruction:
         if len(result) == BYTES_IN_WORD + 1:
             STATE.overflow = True
             result = result[:BYTES_IN_WORD]
-        elif len(result) > BYTES_IN_WORD:
-            raise ArithmeticError(
-                f"Adding {a=} and {v=} resulted in a {len(result)} word number"
-            )
 
         STATE.rA.update(sign, *result)
 
@@ -279,6 +275,10 @@ class Instruction:
 
     def _address_transfer(self, register: str) -> None:
         match self.field:
+            case 0:
+                self._increment(register)
+            case 1:
+                self._increment(register, negative=True)
             case 2:
                 self._enter(register)
             case 3:
@@ -317,6 +317,45 @@ class Instruction:
                 STATE.rI5.update(sign, *data)
             case "I6":
                 STATE.rI6.update(sign, *data)
+            case _:
+                raise ValueError(f"Unknown register {register}")
+
+    def _increment(self, register: str, negative: bool = False) -> None:
+        # get the relevant register
+        r: IndexRegister | WordRegister
+        match register:
+            case "A":
+                r = STATE.rA
+            case "X":
+                r = STATE.rX
+            case "I1":
+                r = STATE.rI1
+            case "I2":
+                r = STATE.rI2
+            case "I3":
+                r = STATE.rI3
+            case "I4":
+                r = STATE.rI4
+            case "I5":
+                r = STATE.rI5
+            case "I6":
+                r = STATE.rI6
+            case _:
+                raise ValueError(f"Unknown register {register}")
+
+        # compute increment / decrement
+        m = self._get_address()
+        i = int(r)
+        i += -m if negative else m
+
+        # store back into register
+        sign, result = int_to_bytes(i, padding=BYTES_IN_WORD)
+
+        if len(result) == BYTES_IN_WORD + 1:
+            STATE.overflow = True
+            result = result[:BYTES_IN_WORD]
+
+        r.update(sign, *result)
 
     def _get_address(self) -> int:
         match self.index:
