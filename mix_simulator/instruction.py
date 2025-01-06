@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import Tuple
 
-from mix_simulator.byte import BITS_IN_BYTE, Byte, bytes_to_int, int_to_bytes
+from mix_simulator.byte import BITS_IN_BYTE, bytes_to_int, int_to_bytes
 from mix_simulator.opcode import OpCode
+from mix_simulator.register import ZERO_REGISTER
+from mix_simulator.simulator import STATE
 from mix_simulator.word import BYTES_IN_WORD, Word
 
 
@@ -98,9 +100,9 @@ class Instruction:
             case OpCode.ST6:
                 self._store("I6")
             case OpCode.STJ:
-                self._store_j()
+                self._store("J")
             case OpCode.STZ:
-                self._store_zero()
+                self._store("Z")
 
             # Unknown OpCode
             case _:
@@ -109,11 +111,9 @@ class Instruction:
     def _load(
         self, register: str, is_index_register: bool = False, negative: bool = False
     ) -> None:
-        from mix_simulator.simulator import state
-
         # load word at address
         m = self._get_address()
-        word = state.memory[m]
+        word = STATE.memory[m]
 
         # select relevant fields
         sign, data = word.load_fields(*self.modification)
@@ -132,37 +132,39 @@ class Instruction:
         little_endian_data = reversed(data)
         match register:
             case "A":
-                state.rA.update(sign, *little_endian_data)
+                STATE.rA.update(sign, *little_endian_data)
             case "X":
-                state.rX.update(sign, *little_endian_data)
+                STATE.rX.update(sign, *little_endian_data)
             case "I1":
-                state.rI1.update(sign, *little_endian_data)
+                STATE.rI1.update(sign, *little_endian_data)
             case "I2":
-                state.rI2.update(sign, *little_endian_data)
+                STATE.rI2.update(sign, *little_endian_data)
             case "I3":
-                state.rI3.update(sign, *little_endian_data)
+                STATE.rI3.update(sign, *little_endian_data)
             case "I4":
-                state.rI4.update(sign, *little_endian_data)
+                STATE.rI4.update(sign, *little_endian_data)
             case "I5":
-                state.rI5.update(sign, *little_endian_data)
+                STATE.rI5.update(sign, *little_endian_data)
             case "I6":
-                state.rI6.update(sign, *little_endian_data)
+                STATE.rI6.update(sign, *little_endian_data)
             case _:
                 raise ValueError(f"Unknown register {register}")
 
     def _store(self, register: str) -> None:
-        from mix_simulator.simulator import state
-
         # get data from register
         match register:
             case "A":
-                sign, data = state.rA.store_fields(*self.modification)
+                sign, data = STATE.rA.store_fields(*self.modification)
+            case "J":
+                sign, data = STATE.rJ.store_fields(*self.modification)
+            case "Z":
+                sign, data = ZERO_REGISTER.store_fields(*self.modification)
             case _:
                 raise ValueError(f"Unknown register {register}")
 
         # get the word to update
         m = self._get_address()
-        word = state.memory[m]
+        word = STATE.memory[m]
 
         # store the data in the word
         if sign is not None:
@@ -175,120 +177,91 @@ class Instruction:
         for i, d in zip(indices, data):
             word.update(i, d)
 
-    def _store_j(self) -> None:
-        from mix_simulator.simulator import state
-
-        m = self._get_address()
-        word = state.memory[m]
-
-        # TODO - this only supports F = (0:2)
-        word.sign = False
-        word.update(1, state.rJ.i4)
-        word.update(2, state.rJ.i5)
-
-    def _store_zero(self) -> None:
-        from mix_simulator.simulator import state
-
-        m = self._get_address()
-        word = state.memory[m]
-
-        word.sign = False
-        for i in range(1, 6):
-            word.update(i, Byte(0))
-
     def _add(self, negative: bool = False) -> None:
-        from mix_simulator.simulator import state
-
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = state.memory[m]
+        word = STATE.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # add V to A
-        a = int(state.rA)
+        a = int(STATE.rA)
         a += -v if negative else v
-        sign = state.rA.sign if a == 0 else a < 0
+        sign = STATE.rA.sign if a == 0 else a < 0
 
         # store back into A
         result = int_to_bytes(a, padding=BYTES_IN_WORD)
 
         if len(result) == BYTES_IN_WORD + 1:
-            state.overflow = True
+            STATE.overflow = True
             result = result[:BYTES_IN_WORD]
         elif len(result) > BYTES_IN_WORD:
             raise ArithmeticError(
                 f"Adding {a=} and {v=} resulted in a {len(result)} word number"
             )
 
-        state.rA.update(sign, *result)
+        STATE.rA.update(sign, *result)
 
     def _mul(self) -> None:
-        from mix_simulator.simulator import state
-
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = state.memory[m]
+        word = STATE.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # multiple A by V
-        a = int(state.rA)
+        a = int(STATE.rA)
         product = a * v
-        sign = sign != state.rA.sign
+        sign = sign != STATE.rA.sign
 
         # store back into A and X
         result = int_to_bytes(product, padding=BYTES_IN_WORD * 2)
         # X gets the low bytes
-        state.rX.update(sign, *result[:BYTES_IN_WORD])
+        STATE.rX.update(sign, *result[:BYTES_IN_WORD])
         # A gets the high bytes
-        state.rA.update(sign, *result[BYTES_IN_WORD:])
+        STATE.rA.update(sign, *result[BYTES_IN_WORD:])
 
     def _div(self) -> None:
-        from mix_simulator.simulator import state
-
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = state.memory[m]
+        word = STATE.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # divide AX by V
-        a = int(state.rA)
-        x = int(state.rX)
+        a = int(STATE.rA)
+        x = int(STATE.rX)
         ax = (abs(a) << (BYTES_IN_WORD * BITS_IN_BYTE)) + abs(x)
         ax = -ax if a < 0 else ax
         quotient, remainder = divmod(ax, v)
-        sign = sign != state.rA.sign
+        sign = sign != STATE.rA.sign
 
         # store quotient back into A
         result = int_to_bytes(quotient, padding=BYTES_IN_WORD)
         if len(result) > BYTES_IN_WORD:
-            state.overflow = True
+            STATE.overflow = True
             result = result[:BYTES_IN_WORD]
-        state.rA.update(sign, *result)
+        STATE.rA.update(sign, *result)
 
         # store remainder back into X
         result = int_to_bytes(remainder, padding=BYTES_IN_WORD)
-        state.rX.update(sign, *result)
+        STATE.rX.update(sign, *result)
 
     def _get_address(self) -> int:
-        from mix_simulator.simulator import state
-
         match self.index:
             case 0:
                 return self.address
             case 1:
-                return self.address + int(state.rI1)
+                return self.address + int(STATE.rI1)
             case 2:
-                return self.address + int(state.rI2)
+                return self.address + int(STATE.rI2)
             case 3:
-                return self.address + int(state.rI3)
+                return self.address + int(STATE.rI3)
             case 4:
-                return self.address + int(state.rI4)
+                return self.address + int(STATE.rI4)
             case 5:
-                return self.address + int(state.rI5)
+                return self.address + int(STATE.rI5)
             case 6:
-                return self.address + int(state.rI6)
+                return self.address + int(STATE.rI6)
             case _:
                 raise ValueError(f"Index must be value in range 0-6. Got {self.index}")
