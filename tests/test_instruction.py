@@ -100,67 +100,47 @@ class TestInstruction(TestCase):
         with self.assertRaises(ValueError):
             instruction.execute()  # try to load more than 2 bytes into an index register
 
-    def test_execute_STA(self) -> None:
+    @parameterized.expand(
+        [
+            # STA 2000
+            (
+                Instruction(2000, 0, (0, 5), OpCode.STA),
+                Word(False, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0)),
+            ),
+            # STA 2000(1:5)
+            (
+                Instruction(2000, 0, (1, 5), OpCode.STA),
+                Word(True, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0)),
+            ),
+            # STA 2000(5:5)
+            (
+                Instruction(2000, 0, (5, 5), OpCode.STA),
+                Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(0)),
+            ),
+            # STA 2000(2:2)
+            (
+                Instruction(2000, 0, (2, 2), OpCode.STA),
+                Word(True, Byte(1), Byte(0), Byte(3), Byte(4), Byte(5)),
+            ),
+            # STA 2000(2:3)
+            (
+                Instruction(2000, 0, (2, 3), OpCode.STA),
+                Word(True, Byte(1), Byte(9), Byte(0), Byte(4), Byte(5)),
+            ),
+            # STA 2000(0:1)
+            (
+                Instruction(2000, 0, (0, 1), OpCode.STA),
+                Word(False, Byte(0), Byte(2), Byte(3), Byte(4), Byte(5)),
+            ),
+        ]
+    )
+    def test_execute_STA(self, test_input: Instruction, expected: Word) -> None:
         from mix_simulator.simulator import state
 
         state.rA.update(False, Byte(0), Byte(9), Byte(8), Byte(7), Byte(6))
-
-        # STA 2000
         state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (0, 5), OpCode.STA)
-        expected = Word(False, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0))
 
-        instruction.execute()
-        actual = state.memory[2000]
-
-        self.assertEqual(expected, actual)
-
-        # STA 2000(1:5)
-        state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (1, 5), OpCode.STA)
-        expected = Word(True, Byte(6), Byte(7), Byte(8), Byte(9), Byte(0))
-
-        instruction.execute()
-        actual = state.memory[2000]
-
-        self.assertEqual(expected, actual)
-
-        # STA 2000(5:5)
-        state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (5, 5), OpCode.STA)
-        expected = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(0))
-
-        instruction.execute()
-        actual = state.memory[2000]
-
-        self.assertEqual(expected, actual)
-
-        # STA 2000(2:2)
-        state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (2, 2), OpCode.STA)
-        expected = Word(True, Byte(1), Byte(0), Byte(3), Byte(4), Byte(5))
-
-        instruction.execute()
-        actual = state.memory[2000]
-
-        self.assertEqual(expected, actual)
-
-        # STA 2000(2:3)
-        state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (2, 3), OpCode.STA)
-        expected = Word(True, Byte(1), Byte(9), Byte(0), Byte(4), Byte(5))
-
-        instruction.execute()
-        actual = state.memory[2000]
-
-        self.assertEqual(expected, actual)
-
-        # STA 2000(0:1)
-        state.memory[2000] = Word(True, Byte(1), Byte(2), Byte(3), Byte(4), Byte(5))
-        instruction = Instruction(2000, 0, (0, 1), OpCode.STA)
-        expected = Word(False, Byte(0), Byte(2), Byte(3), Byte(4), Byte(5))
-
-        instruction.execute()
+        test_input.execute()
         actual = state.memory[2000]
 
         self.assertEqual(expected, actual)
