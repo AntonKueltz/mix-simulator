@@ -1,5 +1,5 @@
 from collections.abc import Reversible
-from typing import List
+from typing import List, Tuple
 
 BITS_IN_BYTE = 6
 UPPER_LIMIT = 1 << BITS_IN_BYTE
@@ -27,22 +27,22 @@ class Byte:
         raise TypeError(f"Cannot compare Byte to {type(other)}")
 
 
-def int_to_bytes(val: int, padding: int = 0) -> List[Byte]:
+def int_to_bytes(val: int, padding: int = 0) -> Tuple[bool, List[Byte]]:
     """Returns the passed integer in _little endian_ (0 index is lowest byte) representation."""
-    val = abs(val)
+    absval = abs(val)
     result: List[Byte] = []
 
-    while val:
-        b = Byte(val & BIT_MASK)
+    while absval:
+        b = Byte(absval & BIT_MASK)
         result.append(b)
-        val >>= BITS_IN_BYTE
+        absval >>= BITS_IN_BYTE
         padding -= 1
 
     while padding > 0:
         result.append(Byte(0))
         padding -= 1
 
-    return result
+    return val < 0, result
 
 
 def bytes_to_int(bs: Reversible[Byte], sign: bool = False) -> int:

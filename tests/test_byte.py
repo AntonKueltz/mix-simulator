@@ -22,13 +22,23 @@ class TestByte(TestCase):
 
     @parameterized.expand(
         [
-            (3241, 0, [Byte(41), Byte(50)]),
-            (1_073_741_823, 0, [Byte(63), Byte(63), Byte(63), Byte(63), Byte(63)]),
-            (3241, 5, [Byte(41), Byte(50), Byte(0), Byte(0), Byte(0)]),
+            (3241, 0, (False, [Byte(41), Byte(50)])),
+            (-3241, 0, (True, [Byte(41), Byte(50)])),
+            (
+                1_073_741_823,
+                0,
+                (False, [Byte(63), Byte(63), Byte(63), Byte(63), Byte(63)]),
+            ),
+            (3241, 5, (False, [Byte(41), Byte(50), Byte(0), Byte(0), Byte(0)])),
+            (-3241, 5, (True, [Byte(41), Byte(50), Byte(0), Byte(0), Byte(0)])),
         ]
     )
     def test_int_to_bytes(
         self, test_input: int, padding: int, expected: List[Byte]
     ) -> None:
-        actual = int_to_bytes(test_input, padding=padding)
-        self.assertEqual(expected, actual)
+        esign, edata = expected
+
+        sign, actual = int_to_bytes(test_input, padding=padding)
+
+        self.assertEqual(esign, sign)
+        self.assertEqual(edata, actual)

@@ -39,3 +39,15 @@ class OpCode(IntEnum):
     STX = 31  # store X
     STJ = 32  # store J
     STZ = 33  # store 0
+
+    # Address Transfer Operators
+    # These depend on the F (field) value as well. 0 = INC, 1 = DEC, 2 = ENT, 3 = ENN
+    # ATR is used as the "generic name" where R identifies the relevant register
+    ATA = 48  # address transfer A
+    AT1 = 49  # address transfer I1
+    AT2 = 50  # address transfer I2
+    AT3 = 51  # address transfer I3
+    AT4 = 52  # address transfer I4
+    AT5 = 53  # address transfer I5
+    AT6 = 54  # address transfer I6
+    ATX = 55  # address transfer X

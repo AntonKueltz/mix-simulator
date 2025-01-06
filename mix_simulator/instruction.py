@@ -104,6 +104,24 @@ class Instruction:
             case OpCode.STZ:
                 self._store("Z")
 
+            # ENT* / ENN* / INC* / DEC*
+            case OpCode.ATA:
+                self._address_transfer("A")
+            case OpCode.AT1:
+                self._address_transfer("I1")
+            case OpCode.AT2:
+                self._address_transfer("I2")
+            case OpCode.AT3:
+                self._address_transfer("I3")
+            case OpCode.AT4:
+                self._address_transfer("I4")
+            case OpCode.AT5:
+                self._address_transfer("I5")
+            case OpCode.AT6:
+                self._address_transfer("I6")
+            case OpCode.ATX:
+                self._address_transfer("X")
+
             # Unknown OpCode
             case _:
                 raise ValueError(f"Unsupported opcode {self.opcode}")
@@ -155,6 +173,20 @@ class Instruction:
         match register:
             case "A":
                 sign, data = STATE.rA.store_fields(*self.modification)
+            case "X":
+                sign, data = STATE.rX.store_fields(*self.modification)
+            case "I1":
+                sign, data = STATE.rI1.store_fields(*self.modification)
+            case "I2":
+                sign, data = STATE.rI2.store_fields(*self.modification)
+            case "I3":
+                sign, data = STATE.rI3.store_fields(*self.modification)
+            case "I4":
+                sign, data = STATE.rI4.store_fields(*self.modification)
+            case "I5":
+                sign, data = STATE.rI5.store_fields(*self.modification)
+            case "I6":
+                sign, data = STATE.rI6.store_fields(*self.modification)
             case "J":
                 sign, data = STATE.rJ.store_fields(*self.modification)
             case "Z":
@@ -187,10 +219,9 @@ class Instruction:
         # add V to A
         a = int(STATE.rA)
         a += -v if negative else v
-        sign = STATE.rA.sign if a == 0 else a < 0
 
         # store back into A
-        result = int_to_bytes(a, padding=BYTES_IN_WORD)
+        sign, result = int_to_bytes(a, padding=BYTES_IN_WORD)
 
         if len(result) == BYTES_IN_WORD + 1:
             STATE.overflow = True
@@ -212,10 +243,9 @@ class Instruction:
         # multiple A by V
         a = int(STATE.rA)
         product = a * v
-        sign = sign != STATE.rA.sign
 
         # store back into A and X
-        result = int_to_bytes(product, padding=BYTES_IN_WORD * 2)
+        sign, result = int_to_bytes(product, padding=BYTES_IN_WORD * 2)
         # X gets the low bytes
         STATE.rX.update(sign, *result[:BYTES_IN_WORD])
         # A gets the high bytes
@@ -237,15 +267,56 @@ class Instruction:
         sign = sign != STATE.rA.sign
 
         # store quotient back into A
-        result = int_to_bytes(quotient, padding=BYTES_IN_WORD)
+        _, result = int_to_bytes(quotient, padding=BYTES_IN_WORD)
         if len(result) > BYTES_IN_WORD:
             STATE.overflow = True
             result = result[:BYTES_IN_WORD]
         STATE.rA.update(sign, *result)
 
         # store remainder back into X
-        result = int_to_bytes(remainder, padding=BYTES_IN_WORD)
+        _, result = int_to_bytes(remainder, padding=BYTES_IN_WORD)
         STATE.rX.update(sign, *result)
+
+    def _address_transfer(self, register: str) -> None:
+        match self.field:
+            case 2:
+                self._enter(register)
+            case 3:
+                self._enter(register, negative=True)
+            case _:
+                raise ValueError(
+                    f"{self.field} is not a valid op variant for an address transfer operator."
+                )
+
+    def _enter(self, register: str, negative: bool = False) -> None:
+        # TODO - does not support -0 currently
+
+        # get the value of the address and interpret it as an integer
+        m = self._get_address()
+        sign, data = int_to_bytes(m)
+
+        # flip the sign if negative
+        if negative:
+            sign = not sign
+
+        # set the relevant register
+        match register:
+            case "A":
+                STATE.rA.update(sign, *data)
+            case "X":
+                STATE.rX.update(sign, *data)
+            case "I1":
+                STATE.rI1.update(sign, *data)
+            case "I2":
+                STATE.rI2.update(sign, *data)
+            case "I3":
+                STATE.rI3.update(sign, *data)
+            case "I4":
+                STATE.rI4.update(sign, *data)
+            case "I5":
+                STATE.rI5.update(sign, *data)
+            case "I6":
+                STATE.rI6.update(sign, *data)
 
     def _get_address(self) -> int:
         match self.index:
