@@ -2,7 +2,7 @@ from random import randint
 from typing import Tuple
 from unittest import TestCase
 
-from mix_simulator.byte import Byte, UPPER_LIMIT
+from mix_simulator.byte import Byte, BYTE_UPPER_LIMIT
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import IndexRegister
@@ -72,7 +72,7 @@ class TestInstruction(TestCase):
         self, instruction: Instruction, register: IndexRegister
     ) -> None:
         expected = randint(0, STATE.memory.words)
-        hi, lo = divmod(expected, UPPER_LIMIT)
+        hi, lo = divmod(expected, BYTE_UPPER_LIMIT)
         register.update(False, Byte(lo), Byte(hi))
 
         actual = instruction._get_address()

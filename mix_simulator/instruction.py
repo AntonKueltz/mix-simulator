@@ -1,7 +1,13 @@
 from __future__ import annotations
 from typing import Tuple
 
-from mix_simulator.byte import BITS_IN_BYTE, bytes_to_int, int_to_bytes
+from mix_simulator.byte import (
+    BITS_IN_BYTE,
+    BYTE_UPPER_LIMIT,
+    Byte,
+    bytes_to_int,
+    int_to_bytes,
+)
 from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import (
@@ -147,6 +153,26 @@ class Instruction:
                 self._compare(STATE.rI5)
             case OpCode.CMP6:
                 self._compare(STATE.rI6)
+
+            # J*
+            case OpCode.JMP:
+                self._jump(None)
+            case OpCode.JA:
+                self._jump(STATE.rA)
+            case OpCode.JX:
+                self._jump(STATE.rX)
+            case OpCode.J1:
+                self._jump(STATE.rI1)
+            case OpCode.J2:
+                self._jump(STATE.rI2)
+            case OpCode.J3:
+                self._jump(STATE.rI3)
+            case OpCode.J4:
+                self._jump(STATE.rI4)
+            case OpCode.J5:
+                self._jump(STATE.rI5)
+            case OpCode.J6:
+                self._jump(STATE.rI6)
 
             # Unknown OpCode
             case _:
@@ -331,6 +357,93 @@ class Instruction:
             STATE.comparison_indicator = ComparisonIndicator.EQUAL
         else:
             STATE.comparison_indicator = ComparisonIndicator.GREATER
+
+    def _jump(self, register: IndexRegister | WordRegister | None) -> None:
+        criteria_met = False
+
+        # evaluate the jump criteria
+        if self.opcode == OpCode.JMP:
+            # JMP and JSP
+            if self.field == 0 or self.field == 1:
+                criteria_met = True
+            # JOV - if the overflow toggle is on, it is turned off and a JMP occurs
+            elif self.field == 2 and STATE.overflow:
+                criteria_met = True
+                STATE.overflow = False
+            # JNOV - if the overflow toggle is off, a JMP occurs; otherwise it is turned off
+            elif self.field == 3:
+                if not STATE.overflow:
+                    criteria_met = True
+                else:
+                    STATE.overflow = False
+            # JL
+            elif (
+                self.field == 4
+                and STATE.comparison_indicator == ComparisonIndicator.LESS
+            ):
+                criteria_met = True
+            # JE
+            elif (
+                self.field == 5
+                and STATE.comparison_indicator == ComparisonIndicator.EQUAL
+            ):
+                criteria_met = True
+            # JG
+            elif (
+                self.field == 6
+                and STATE.comparison_indicator == ComparisonIndicator.GREATER
+            ):
+                criteria_met = True
+            # JGE
+            elif (
+                self.field == 7
+                and STATE.comparison_indicator != ComparisonIndicator.LESS
+            ):
+                criteria_met = True
+            # JNE
+            elif (
+                self.field == 8
+                and STATE.comparison_indicator != ComparisonIndicator.EQUAL
+            ):
+                criteria_met = True
+            # JLE
+            elif (
+                self.field == 9
+                and STATE.comparison_indicator != ComparisonIndicator.GREATER
+            ):
+                criteria_met = True
+        elif register is not None:
+            val = int(register)
+            # J*N
+            if self.field == 0 and val < 0:
+                criteria_met = True
+            # J*Z
+            elif self.field == 1 and val == 0:
+                criteria_met = True
+            # J*P
+            elif self.field == 2 and val > 0:
+                criteria_met = True
+            # J*NN
+            elif self.field == 3 and val >= 0:
+                criteria_met = True
+            # J*NZ
+            elif self.field == 4 and val != 0:
+                criteria_met = True
+            # J*NP
+            elif self.field == 5 and val <= 0:
+                criteria_met = True
+
+        if not criteria_met:
+            return
+
+        # update J (JSJ does not update J)
+        if self.opcode != OpCode.JMP or self.field != 1:
+            # program counter containes the _next_ instruction (word)
+            hi, lo = divmod(STATE.program_counter, BYTE_UPPER_LIMIT)
+            STATE.rJ.update(Byte(lo), Byte(hi))
+
+        # perform the jump
+        STATE.program_counter = self._get_address()
 
     def _get_address(self) -> int:
         match self.index:

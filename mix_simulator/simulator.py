@@ -20,6 +20,7 @@ class SimulatorState:
     rJ: JumpRegister
     overflow: bool
     comparison_indicator: ComparisonIndicator
+    program_counter: int
     # labels: Dict[str: int]
 
 
@@ -36,4 +37,5 @@ STATE = SimulatorState(
     rJ=JumpRegister(Byte(0), Byte(0)),
     overflow=False,
     comparison_indicator=ComparisonIndicator.LESS,
+    program_counter=0,
 )

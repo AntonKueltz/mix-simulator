@@ -2,15 +2,15 @@ from collections.abc import Reversible
 from typing import List, Tuple
 
 BITS_IN_BYTE = 6
-UPPER_LIMIT = 1 << BITS_IN_BYTE
-BIT_MASK = UPPER_LIMIT - 1
+BYTE_UPPER_LIMIT = 1 << BITS_IN_BYTE
+BIT_MASK = BYTE_UPPER_LIMIT - 1
 
 
 class Byte:
     """A basic unit of information capable of holding 64 distinct values."""
 
     def __init__(self, val: int) -> None:
-        if val >= UPPER_LIMIT:
+        if val >= BYTE_UPPER_LIMIT:
             raise ValueError(f"Byte can only represent up to {BITS_IN_BYTE} bits")
 
         self.val = val

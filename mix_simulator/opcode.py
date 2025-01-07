@@ -42,8 +42,23 @@ class OpCode(IntEnum):
     STJ = 32  # store J
     STZ = 33  # store 0
 
+    # Jump Operators
+    # Depends on the F (op variant) value:
+    # 0 = JMP, 1 = JSJ, 2 = JOV, 3 = JNOV, 4 = JL, 5 = JE, 6 = JG, 7 = JGE, 8 = JNE, 9 = JLE
+    JMP = 39  # jump
+    # Register based jumps also depend on the F (op variant) value:
+    # 0 = J*N, 1 = J*Z, 2 = J*P, 3 = J*NN, 4 = J*NZ, 5 = J*NP
+    JA = 40  # jump A
+    J1 = 41  # jump I1
+    J2 = 42  # jump I2
+    J3 = 43  # jump I3
+    J4 = 44  # jump I4
+    J5 = 45  # jump I5
+    J6 = 46  # jump I6
+    JX = 47  # jump X
+
     # Address Transfer Operators
-    # These depend on the F (op variant) value as well: 0 = INC, 1 = DEC, 2 = ENT, 3 = ENN
+    # These depend on the F (op variant) value: 0 = INC, 1 = DEC, 2 = ENT, 3 = ENN
     # AT{R} is used as the "generic name" where R identifies the relevant register
     ATA = 48  # address transfer A
     AT1 = 49  # address transfer I1
