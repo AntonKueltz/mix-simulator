@@ -3,7 +3,7 @@ from unittest import TestCase
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.register import WordRegister
+from mix_simulator.register import IndexRegister, WordRegister
 from mix_simulator.simulator import STATE
 
 from parameterized import parameterized  # type: ignore
@@ -58,6 +58,34 @@ class TestEnter(TestCase):
             ),
         ]
     )
-    def test_execute(self, test_input: Instruction, expected: WordRegister) -> None:
+    def test_execute_word_register(
+        self, test_input: Instruction, expected: WordRegister
+    ) -> None:
         test_input.execute()
         self.assertEqual(expected, STATE.rA)
+
+    @parameterized.expand(
+        [
+            (OpCode.AT1, STATE.rI1, 2, False),
+            (OpCode.AT2, STATE.rI2, 2, False),
+            (OpCode.AT3, STATE.rI3, 2, False),
+            (OpCode.AT4, STATE.rI4, 2, False),
+            (OpCode.AT5, STATE.rI5, 2, False),
+            (OpCode.AT6, STATE.rI6, 2, False),
+            (OpCode.AT1, STATE.rI1, 3, True),
+            (OpCode.AT2, STATE.rI2, 3, True),
+            (OpCode.AT3, STATE.rI3, 3, True),
+            (OpCode.AT4, STATE.rI4, 3, True),
+            (OpCode.AT5, STATE.rI5, 3, True),
+            (OpCode.AT6, STATE.rI6, 3, True),
+        ]
+    )
+    def test_execute_enter_index_register(
+        self, opcode: OpCode, register: IndexRegister, variant: int, sign: bool
+    ) -> None:
+        instruction = Instruction(100, 1, variant, opcode)
+        expected = IndexRegister(sign, Byte(17), Byte(12))
+
+        instruction.execute()
+
+        self.assertEqual(expected, register)

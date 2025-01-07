@@ -4,6 +4,7 @@ from unittest import TestCase
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
+from mix_simulator.register import IndexRegister
 from mix_simulator.simulator import STATE
 from mix_simulator.word import Word
 
@@ -39,14 +40,53 @@ class TestLoad(TestCase):
         self.assertEqual(er4, STATE.rA.r4)
         self.assertEqual(er5, STATE.rA.r5)
 
-    def test_execute_index_register(self) -> None:
-        # LD1 2000(1:2)
-        instruction = Instruction(2000, 0, 8 + 2, OpCode.LD1)
+    @parameterized.expand(
+        [
+            (OpCode.LD1, STATE.rI1, False),
+            (OpCode.LD2, STATE.rI2, False),
+            (OpCode.LD3, STATE.rI3, False),
+            (OpCode.LD4, STATE.rI4, False),
+            (OpCode.LD5, STATE.rI5, False),
+            (OpCode.LD6, STATE.rI6, False),
+            (OpCode.LD1N, STATE.rI1, True),
+            (OpCode.LD2N, STATE.rI2, True),
+            (OpCode.LD3N, STATE.rI3, True),
+            (OpCode.LD4N, STATE.rI4, True),
+            (OpCode.LD5N, STATE.rI5, True),
+            (OpCode.LD6N, STATE.rI6, True),
+        ]
+    )
+    def test_execute_index_registers(
+        self, opcode: OpCode, register: IndexRegister, sign: bool
+    ) -> None:
+        # LDi 2000(1:2)
+        instruction = Instruction(2000, 0, 8 + 2, opcode)
         instruction.execute()
 
-        self.assertEqual(False, STATE.rI1.sign)
-        self.assertEqual(1, STATE.rI1.i4)
-        self.assertEqual(16, STATE.rI1.i5)
+        self.assertEqual(sign, register.sign)
+        self.assertEqual(1, register.i4)
+        self.assertEqual(16, register.i5)
+
+    @parameterized.expand(
+        [
+            (OpCode.LD1N, STATE.rI1),
+            (OpCode.LD2N, STATE.rI2),
+            (OpCode.LD3N, STATE.rI3),
+            (OpCode.LD4N, STATE.rI4),
+            (OpCode.LD5N, STATE.rI5),
+            (OpCode.LD6N, STATE.rI6),
+        ]
+    )
+    def test_execute_negative_index_registers(
+        self, opcode: OpCode, register: IndexRegister
+    ) -> None:
+        # LDi 2000(1:2)
+        instruction = Instruction(2000, 0, 8 + 2, opcode)
+        instruction.execute()
+
+        self.assertEqual(True, register.sign)
+        self.assertEqual(1, register.i4)
+        self.assertEqual(16, register.i5)
 
     def test_execute_index_register_too_many_bytes(self) -> None:
         # LD1 2000

@@ -1,13 +1,14 @@
+from random import randint
 from unittest import TestCase
 
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
+from mix_simulator.register import IndexRegister
 from mix_simulator.simulator import STATE
 from mix_simulator.word import Word
 
 from parameterized import parameterized  # type: ignore
-from pytest import mark  # type: ignore
 
 
 class TestStore(TestCase):
@@ -68,9 +69,28 @@ class TestStore(TestCase):
 
         self.assertEqual(expected, actual)
 
-    @mark.skip(reason="TODO")
-    def test_execute_index_register(self) -> None:
-        pass
+    @parameterized.expand(
+        [
+            (OpCode.ST1, STATE.rI1),
+            (OpCode.ST2, STATE.rI2),
+            (OpCode.ST3, STATE.rI3),
+            (OpCode.ST4, STATE.rI4),
+            (OpCode.ST5, STATE.rI5),
+            (OpCode.ST6, STATE.rI6),
+        ]
+    )
+    def test_execute_index_register(
+        self, opcode: OpCode, register: IndexRegister
+    ) -> None:
+        instruction = Instruction(2000, 0, 3 * 8 + 5, opcode)
+        a, b = randint(0, 63), randint(0, 63)
+        register.update(False, Byte(b), Byte(a))
+        expected = Word(True, Byte(1), Byte(2), Byte(0), Byte(a), Byte(b))
+
+        instruction.execute()
+        actual = STATE.memory[2000]
+
+        self.assertEqual(expected, actual)
 
     @parameterized.expand(
         [

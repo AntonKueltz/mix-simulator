@@ -87,6 +87,8 @@ class Instruction:
             # ST*
             case OpCode.STA:
                 self._store("A")
+            case OpCode.STX:
+                self._store("X")
             case OpCode.ST1:
                 self._store("I1")
             case OpCode.ST2:
@@ -107,6 +109,8 @@ class Instruction:
             # ENT* / ENN* / INC* / DEC*
             case OpCode.ATA:
                 self._address_transfer("A")
+            case OpCode.ATX:
+                self._address_transfer("X")
             case OpCode.AT1:
                 self._address_transfer("I1")
             case OpCode.AT2:
@@ -119,8 +123,6 @@ class Instruction:
                 self._address_transfer("I5")
             case OpCode.AT6:
                 self._address_transfer("I6")
-            case OpCode.ATX:
-                self._address_transfer("X")
 
             # Unknown OpCode
             case _:
@@ -221,11 +223,11 @@ class Instruction:
         a += -v if negative else v
 
         # store back into A
-        sign, result = int_to_bytes(a, padding=BYTES_IN_WORD)
+        sign, result = int_to_bytes(a, padding=STATE.rA.BYTES)
 
-        if len(result) == BYTES_IN_WORD + 1:
+        if len(result) == STATE.rA.BYTES + 1:
             STATE.overflow = True
-            result = result[:BYTES_IN_WORD]
+            result = result[: STATE.rA.BYTES]
 
         STATE.rA.update(sign, *result)
 
@@ -241,11 +243,11 @@ class Instruction:
         product = a * v
 
         # store back into A and X
-        sign, result = int_to_bytes(product, padding=BYTES_IN_WORD * 2)
+        sign, result = int_to_bytes(product, padding=STATE.rA.BYTES + STATE.rX.BYTES)
         # X gets the low bytes
-        STATE.rX.update(sign, *result[:BYTES_IN_WORD])
+        STATE.rX.update(sign, *result[: STATE.rA.BYTES])
         # A gets the high bytes
-        STATE.rA.update(sign, *result[BYTES_IN_WORD:])
+        STATE.rA.update(sign, *result[STATE.rA.BYTES :])
 
     def _div(self) -> None:
         # load the value in the instruction as an integer
@@ -263,14 +265,14 @@ class Instruction:
         sign = sign != STATE.rA.sign
 
         # store quotient back into A
-        _, result = int_to_bytes(quotient, padding=BYTES_IN_WORD)
-        if len(result) > BYTES_IN_WORD:
+        _, result = int_to_bytes(quotient, padding=STATE.rA.BYTES)
+        if len(result) > STATE.rA.BYTES:
             STATE.overflow = True
-            result = result[:BYTES_IN_WORD]
+            result = result[: STATE.rA.BYTES]
         STATE.rA.update(sign, *result)
 
         # store remainder back into X
-        _, result = int_to_bytes(remainder, padding=BYTES_IN_WORD)
+        _, result = int_to_bytes(remainder, padding=STATE.rX.BYTES)
         STATE.rX.update(sign, *result)
 
     def _address_transfer(self, register: str) -> None:
@@ -349,11 +351,11 @@ class Instruction:
         i += -m if negative else m
 
         # store back into register
-        sign, result = int_to_bytes(i, padding=BYTES_IN_WORD)
+        sign, result = int_to_bytes(i, padding=r.BYTES)
 
-        if len(result) == BYTES_IN_WORD + 1:
+        if len(result) == r.BYTES + 1:
             STATE.overflow = True
-            result = result[:BYTES_IN_WORD]
+            result = result[: r.BYTES]
 
         r.update(sign, *result)
 

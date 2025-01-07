@@ -3,7 +3,7 @@ from unittest import TestCase
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.register import WordRegister
+from mix_simulator.register import IndexRegister, WordRegister
 from mix_simulator.simulator import STATE
 
 from parameterized import parameterized  # type: ignore
@@ -77,3 +77,34 @@ class TestIncrement(TestCase):
 
         self.assertEqual(expected, STATE.rA)
         self.assertTrue(STATE.overflow)
+
+    @parameterized.expand(
+        [
+            (OpCode.AT1, STATE.rI1, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT2, STATE.rI2, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT3, STATE.rI3, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT4, STATE.rI4, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT5, STATE.rI5, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT6, STATE.rI6, 0, IndexRegister(False, Byte(4), Byte(44))),
+            (OpCode.AT1, STATE.rI1, 1, IndexRegister(True, Byte(1), Byte(36))),
+            (OpCode.AT2, STATE.rI2, 1, IndexRegister(True, Byte(1), Byte(36))),
+            (OpCode.AT3, STATE.rI3, 1, IndexRegister(True, Byte(1), Byte(36))),
+            (OpCode.AT4, STATE.rI4, 1, IndexRegister(True, Byte(1), Byte(36))),
+            (OpCode.AT5, STATE.rI5, 1, IndexRegister(True, Byte(1), Byte(36))),
+            (OpCode.AT6, STATE.rI6, 1, IndexRegister(True, Byte(1), Byte(36))),
+        ]
+    )
+    def test_execute_increment_index_register(
+        self,
+        opcode: OpCode,
+        register: IndexRegister,
+        variant: int,
+        expected: IndexRegister,
+    ) -> None:
+        # set I1 to |+|1|36| = 100
+        register.update(False, Byte(36), Byte(1))
+        instruction = Instruction(100, 1, variant, opcode)
+
+        instruction.execute()
+
+        self.assertEqual(expected, register)

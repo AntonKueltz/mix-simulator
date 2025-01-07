@@ -4,6 +4,8 @@ from enum import IntEnum
 class OpCode(IntEnum):
     """Tells the simulator which operation to perform."""
 
+    NOP = 0  # no operation
+
     # Arithmetic Operators
     ADD = 1  # add
     SUB = 2  # subtract
