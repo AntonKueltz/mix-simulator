@@ -3,7 +3,12 @@ from typing import Tuple
 
 from mix_simulator.byte import BITS_IN_BYTE, bytes_to_int, int_to_bytes
 from mix_simulator.opcode import OpCode
-from mix_simulator.register import ZERO_REGISTER, IndexRegister, WordRegister
+from mix_simulator.register import (
+    ZERO_REGISTER,
+    IndexRegister,
+    JumpRegister,
+    WordRegister,
+)
 from mix_simulator.simulator import STATE
 from mix_simulator.word import BYTES_IN_WORD, Word
 
@@ -50,86 +55,104 @@ class Instruction:
 
             # LD*
             case OpCode.LDA:
-                self._load("A")
+                self._load(STATE.rA)
             case OpCode.LDX:
-                self._load("X")
+                self._load(STATE.rX)
             case OpCode.LD1:
-                self._load("I1", is_index_register=True)
+                self._load(STATE.rI1)
             case OpCode.LD2:
-                self._load("I2", is_index_register=True)
+                self._load(STATE.rI2)
             case OpCode.LD3:
-                self._load("I3", is_index_register=True)
+                self._load(STATE.rI3)
             case OpCode.LD4:
-                self._load("I4", is_index_register=True)
+                self._load(STATE.rI4)
             case OpCode.LD5:
-                self._load("I5", is_index_register=True)
+                self._load(STATE.rI5)
             case OpCode.LD6:
-                self._load("I6", is_index_register=True)
+                self._load(STATE.rI6)
 
             # LD*N
             case OpCode.LDAN:
-                self._load("A", negative=True)
+                self._load(STATE.rA, negative=True)
             case OpCode.LDXN:
-                self._load("X", negative=True)
+                self._load(STATE.rX, negative=True)
             case OpCode.LD1N:
-                self._load("I1", is_index_register=True, negative=True)
+                self._load(STATE.rI1, negative=True)
             case OpCode.LD2N:
-                self._load("I2", is_index_register=True, negative=True)
+                self._load(STATE.rI2, negative=True)
             case OpCode.LD3N:
-                self._load("I3", is_index_register=True, negative=True)
+                self._load(STATE.rI3, negative=True)
             case OpCode.LD4N:
-                self._load("I4", is_index_register=True, negative=True)
+                self._load(STATE.rI4, negative=True)
             case OpCode.LD5N:
-                self._load("I5", is_index_register=True, negative=True)
+                self._load(STATE.rI5, negative=True)
             case OpCode.LD6N:
-                self._load("I6", is_index_register=True, negative=True)
+                self._load(STATE.rI6, negative=True)
 
             # ST*
             case OpCode.STA:
-                self._store("A")
+                self._store(STATE.rA)
             case OpCode.STX:
-                self._store("X")
+                self._store(STATE.rX)
             case OpCode.ST1:
-                self._store("I1")
+                self._store(STATE.rI1)
             case OpCode.ST2:
-                self._store("I2")
+                self._store(STATE.rI2)
             case OpCode.ST3:
-                self._store("I3")
+                self._store(STATE.rI3)
             case OpCode.ST4:
-                self._store("I4")
+                self._store(STATE.rI4)
             case OpCode.ST5:
-                self._store("I5")
+                self._store(STATE.rI5)
             case OpCode.ST6:
-                self._store("I6")
+                self._store(STATE.rI6)
             case OpCode.STJ:
-                self._store("J")
+                self._store(STATE.rJ)
             case OpCode.STZ:
-                self._store("Z")
+                self._store(ZERO_REGISTER)
 
             # ENT* / ENN* / INC* / DEC*
             case OpCode.ATA:
-                self._address_transfer("A")
+                self._address_transfer(STATE.rA)
             case OpCode.ATX:
-                self._address_transfer("X")
+                self._address_transfer(STATE.rX)
             case OpCode.AT1:
-                self._address_transfer("I1")
+                self._address_transfer(STATE.rI1)
             case OpCode.AT2:
-                self._address_transfer("I2")
+                self._address_transfer(STATE.rI2)
             case OpCode.AT3:
-                self._address_transfer("I3")
+                self._address_transfer(STATE.rI3)
             case OpCode.AT4:
-                self._address_transfer("I4")
+                self._address_transfer(STATE.rI4)
             case OpCode.AT5:
-                self._address_transfer("I5")
+                self._address_transfer(STATE.rI5)
             case OpCode.AT6:
-                self._address_transfer("I6")
+                self._address_transfer(STATE.rI6)
+
+            # CMP*
+            case OpCode.CMPA:
+                self._compare(STATE.rA)
+            case OpCode.CMPX:
+                self._compare(STATE.rX)
+            case OpCode.CMP1:
+                self._compare(STATE.rI1)
+            case OpCode.CMP2:
+                self._compare(STATE.rI2)
+            case OpCode.CMP3:
+                self._compare(STATE.rI3)
+            case OpCode.CMP4:
+                self._compare(STATE.rI4)
+            case OpCode.CMP5:
+                self._compare(STATE.rI5)
+            case OpCode.CMP6:
+                self._compare(STATE.rI6)
 
             # Unknown OpCode
             case _:
                 raise ValueError(f"Unsupported opcode {self.opcode}")
 
     def _load(
-        self, register: str, is_index_register: bool = False, negative: bool = False
+        self, register: IndexRegister | WordRegister, negative: bool = False
     ) -> None:
         # load word at address
         m = self._get_address()
@@ -139,7 +162,7 @@ class Instruction:
         sign, data = word.load_fields(*self.modification)
 
         # LDi is invalid if setting any of the upper 3 bytes
-        if is_index_register and len(data) > 2:
+        if isinstance(register, IndexRegister) and len(data) > 2:
             raise ValueError(
                 "The LDi instruction is undefined if it would result in setting bytes 1, 2 or 3 to anything but zero."
             )
@@ -150,51 +173,11 @@ class Instruction:
         # set the value
         # flip the endianness of the data since the update function uses little endian
         little_endian_data = reversed(data)
-        match register:
-            case "A":
-                STATE.rA.update(sign, *little_endian_data)
-            case "X":
-                STATE.rX.update(sign, *little_endian_data)
-            case "I1":
-                STATE.rI1.update(sign, *little_endian_data)
-            case "I2":
-                STATE.rI2.update(sign, *little_endian_data)
-            case "I3":
-                STATE.rI3.update(sign, *little_endian_data)
-            case "I4":
-                STATE.rI4.update(sign, *little_endian_data)
-            case "I5":
-                STATE.rI5.update(sign, *little_endian_data)
-            case "I6":
-                STATE.rI6.update(sign, *little_endian_data)
-            case _:
-                raise ValueError(f"Unknown register {register}")
+        register.update(sign, *little_endian_data)
 
-    def _store(self, register: str) -> None:
+    def _store(self, register: IndexRegister | JumpRegister | WordRegister) -> None:
         # get data from register
-        match register:
-            case "A":
-                sign, data = STATE.rA.store_fields(*self.modification)
-            case "X":
-                sign, data = STATE.rX.store_fields(*self.modification)
-            case "I1":
-                sign, data = STATE.rI1.store_fields(*self.modification)
-            case "I2":
-                sign, data = STATE.rI2.store_fields(*self.modification)
-            case "I3":
-                sign, data = STATE.rI3.store_fields(*self.modification)
-            case "I4":
-                sign, data = STATE.rI4.store_fields(*self.modification)
-            case "I5":
-                sign, data = STATE.rI5.store_fields(*self.modification)
-            case "I6":
-                sign, data = STATE.rI6.store_fields(*self.modification)
-            case "J":
-                sign, data = STATE.rJ.store_fields(*self.modification)
-            case "Z":
-                sign, data = ZERO_REGISTER.store_fields(*self.modification)
-            case _:
-                raise ValueError(f"Unknown register {register}")
+        sign, data = register.store_fields(*self.modification)
 
         # get the word to update
         m = self._get_address()
@@ -275,7 +258,7 @@ class Instruction:
         _, result = int_to_bytes(remainder, padding=STATE.rX.BYTES)
         STATE.rX.update(sign, *result)
 
-    def _address_transfer(self, register: str) -> None:
+    def _address_transfer(self, register: IndexRegister | WordRegister) -> None:
         match self.field:
             case 0:
                 self._increment(register)
@@ -290,7 +273,9 @@ class Instruction:
                     f"{self.field} is not a valid op variant for an address transfer operator."
                 )
 
-    def _enter(self, register: str, negative: bool = False) -> None:
+    def _enter(
+        self, register: IndexRegister | WordRegister, negative: bool = False
+    ) -> None:
         # TODO - does not support -0 currently
 
         # get the value of the address and interpret it as an integer
@@ -302,62 +287,27 @@ class Instruction:
             sign = not sign
 
         # set the relevant register
-        match register:
-            case "A":
-                STATE.rA.update(sign, *data)
-            case "X":
-                STATE.rX.update(sign, *data)
-            case "I1":
-                STATE.rI1.update(sign, *data)
-            case "I2":
-                STATE.rI2.update(sign, *data)
-            case "I3":
-                STATE.rI3.update(sign, *data)
-            case "I4":
-                STATE.rI4.update(sign, *data)
-            case "I5":
-                STATE.rI5.update(sign, *data)
-            case "I6":
-                STATE.rI6.update(sign, *data)
-            case _:
-                raise ValueError(f"Unknown register {register}")
+        register.update(sign, *data)
 
-    def _increment(self, register: str, negative: bool = False) -> None:
-        # get the relevant register
-        r: IndexRegister | WordRegister
-        match register:
-            case "A":
-                r = STATE.rA
-            case "X":
-                r = STATE.rX
-            case "I1":
-                r = STATE.rI1
-            case "I2":
-                r = STATE.rI2
-            case "I3":
-                r = STATE.rI3
-            case "I4":
-                r = STATE.rI4
-            case "I5":
-                r = STATE.rI5
-            case "I6":
-                r = STATE.rI6
-            case _:
-                raise ValueError(f"Unknown register {register}")
-
+    def _increment(
+        self, register: IndexRegister | WordRegister, negative: bool = False
+    ) -> None:
         # compute increment / decrement
         m = self._get_address()
-        i = int(r)
+        i = int(register)
         i += -m if negative else m
 
         # store back into register
-        sign, result = int_to_bytes(i, padding=r.BYTES)
+        sign, result = int_to_bytes(i, padding=register.BYTES)
 
-        if len(result) == r.BYTES + 1:
+        if len(result) == register.BYTES + 1:
             STATE.overflow = True
-            result = result[: r.BYTES]
+            result = result[: register.BYTES]
 
-        r.update(sign, *result)
+        register.update(sign, *result)
+
+    def _compare(self, register: IndexRegister | WordRegister) -> None:
+        pass
 
     def _get_address(self) -> int:
         match self.index:

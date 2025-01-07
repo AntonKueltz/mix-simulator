@@ -43,8 +43,8 @@ class OpCode(IntEnum):
     STZ = 33  # store 0
 
     # Address Transfer Operators
-    # These depend on the F (field) value as well. 0 = INC, 1 = DEC, 2 = ENT, 3 = ENN
-    # ATR is used as the "generic name" where R identifies the relevant register
+    # These depend on the F (op variant) value as well: 0 = INC, 1 = DEC, 2 = ENT, 3 = ENN
+    # AT{R} is used as the "generic name" where R identifies the relevant register
     ATA = 48  # address transfer A
     AT1 = 49  # address transfer I1
     AT2 = 50  # address transfer I2
@@ -53,3 +53,13 @@ class OpCode(IntEnum):
     AT5 = 53  # address transfer I5
     AT6 = 54  # address transfer I6
     ATX = 55  # address transfer X
+
+    # Comparison Operators
+    CMPA = 56  # compare A
+    CMP1 = 57  # compare I1
+    CMP2 = 58  # compare I2
+    CMP3 = 59  # compare I3
+    CMP4 = 60  # compare I4
+    CMP5 = 61  # compare I5
+    CMP6 = 62  # compare I6
+    CMPX = 63  # compare X
