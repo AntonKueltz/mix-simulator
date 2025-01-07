@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Tuple
 
 from mix_simulator.byte import BITS_IN_BYTE, bytes_to_int, int_to_bytes
+from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import (
     ZERO_REGISTER,
@@ -307,7 +308,29 @@ class Instruction:
         register.update(sign, *result)
 
     def _compare(self, register: IndexRegister | WordRegister) -> None:
-        pass
+        # an equal comparison always occurs when F is (0:0)
+        if self.field == 0:
+            STATE.comparison_indicator = ComparisonIndicator.EQUAL
+            return
+
+        # load word at address
+        m = self._get_address()
+        word = STATE.memory[m]
+
+        # select relevant fields
+        lsign, ldata = register.compare_fields(*self.modification)
+        rsign, rdata = word.compare_fields(*self.modification)
+
+        # compare the values
+        left = bytes_to_int(ldata, lsign)
+        right = bytes_to_int(rdata, rsign)
+
+        if left < right:
+            STATE.comparison_indicator = ComparisonIndicator.LESS
+        elif left == right:
+            STATE.comparison_indicator = ComparisonIndicator.EQUAL
+        else:
+            STATE.comparison_indicator = ComparisonIndicator.GREATER
 
     def _get_address(self) -> int:
         match self.index:

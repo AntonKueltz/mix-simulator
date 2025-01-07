@@ -45,3 +45,6 @@ class Word:
         data = (self.b1, self.b2, self.b3, self.b4, self.b5)[lo:hi]
 
         return sign, data
+
+    def compare_fields(self, lo: int, hi: int) -> Tuple[bool, Tuple[Byte, ...]]:
+        return self.load_fields(lo, hi)

@@ -70,6 +70,13 @@ class WordRegister:
 
         return sign, data
 
+    def compare_fields(self, lo: int, hi: int) -> Tuple[bool, Tuple[Byte, ...]]:
+        sign = self.sign if lo == 0 else False
+        lo = max(0, lo - 1)
+        data = (self.r1, self.r2, self.r3, self.r4, self.r5)[lo:hi]
+
+        return sign, data
+
 
 class IndexRegister:
     BYTES: int = 2
@@ -108,6 +115,14 @@ class IndexRegister:
         count = hi - lo + 1
         full_word = (Byte(0),) * (BYTES_IN_WORD - 2) + (self.i4, self.i5)
         data = full_word[-count:]
+
+        return sign, data
+
+    def compare_fields(self, lo: int, hi: int) -> Tuple[bool, Tuple[Byte, ...]]:
+        sign = self.sign if lo == 0 else False
+        lo = max(0, lo - 1)
+        full_word = (Byte(0),) * (BYTES_IN_WORD - 2) + (self.i4, self.i5)
+        data = full_word[lo:hi]
 
         return sign, data
 
