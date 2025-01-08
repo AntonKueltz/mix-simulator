@@ -12,6 +12,11 @@ class OpCode(IntEnum):
     MUL = 3  # multiply
     DIV = 4  # divide
 
+    # Miscellaneous Operators
+    # These depend on the F (op variant) value:
+    # 0 = SLA, 1 = SRA, 2 = SLAX, 3 = SRAX, 4 = SLC, 5 = SRC
+    SH = 5  # shift
+
     # Loading Operators
     LDA = 8  # load A
     LD1 = 9  # load I1

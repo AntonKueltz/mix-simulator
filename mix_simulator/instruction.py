@@ -174,6 +174,10 @@ class Instruction:
             case OpCode.J6:
                 self._jump(STATE.rI6)
 
+            # S*
+            case OpCode.SH:
+                self._shift()
+
             # Unknown OpCode
             case _:
                 raise ValueError(f"Unsupported opcode {self.opcode}")
@@ -255,9 +259,9 @@ class Instruction:
         # store back into A and X
         sign, result = int_to_bytes(product, padding=STATE.rA.BYTES + STATE.rX.BYTES)
         # X gets the low bytes
-        STATE.rX.update(sign, *result[: STATE.rA.BYTES])
+        STATE.rX.update(sign, *result[: STATE.rX.BYTES])
         # A gets the high bytes
-        STATE.rA.update(sign, *result[STATE.rA.BYTES :])
+        STATE.rA.update(sign, *result[STATE.rX.BYTES :])
 
     def _div(self) -> None:
         # load the value in the instruction as an integer
@@ -444,6 +448,90 @@ class Instruction:
 
         # perform the jump
         STATE.program_counter = self._get_address()
+
+    def _shift(self) -> None:
+        m = self._get_address()
+        if m < 0:
+            raise ValueError(f"Cannot shift by a negative amount ({m})")
+
+        # reduce m by the amount of bytes in the register(s) to circular shift
+        if self.field == 4 or self.field == 5:
+            m %= STATE.rA.BYTES + STATE.rX.BYTES
+        # shift by 0 is a NOP
+        if m == 0:
+            return
+        bits_to_shift = BITS_IN_BYTE * m
+
+        # SLA and SRA
+        if self.field == 0 or self.field == 1:
+            if m >= STATE.rA.BYTES:
+                # all bytes were shifted out of A
+                data = [Byte(0), Byte(0), Byte(0), Byte(0), Byte(0)]
+            else:
+                a = abs(int(STATE.rA))
+                new_value = (
+                    a << bits_to_shift if self.field == 0 else a >> bits_to_shift
+                )
+                _, data = int_to_bytes(new_value)
+
+            # set A
+            STATE.rA.update(STATE.rA.sign, *data[: STATE.rA.BYTES])
+        # SLAX and SRAX
+        elif self.field == 2 or self.field == 3:
+            if m >= STATE.rA.BYTES + STATE.rX.BYTES:
+                # all bytes were shifted out of A and X
+                data = [
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                    Byte(0),
+                ]
+            else:
+                ax = (abs(int(STATE.rA)) << (BITS_IN_BYTE * STATE.rA.BYTES)) + abs(
+                    (int(STATE.rX))
+                )
+                new_value = (
+                    ax << bits_to_shift if self.field == 2 else ax >> bits_to_shift
+                )
+                _, data = int_to_bytes(new_value)
+                data = data[: STATE.rA.BYTES + STATE.rX.BYTES]
+
+            # set A and X
+            STATE.rX.update(STATE.rX.sign, *data[: STATE.rX.BYTES])
+            STATE.rA.update(STATE.rA.sign, *data[STATE.rX.BYTES :])
+        # SLC and SRC
+        elif self.field == 4 or self.field == 5:
+            rx, ra = STATE.rX, STATE.rA
+            # little endian representation of AX
+            data = [
+                rx.r5,
+                rx.r4,
+                rx.r3,
+                rx.r2,
+                rx.r1,
+                ra.r5,
+                ra.r4,
+                ra.r3,
+                ra.r2,
+                ra.r1,
+            ]
+            ln = len(data)
+
+            # circular shift the data
+            shifted = []
+            for i in range(ln):
+                j = (i - m) % ln if self.field == 4 else (i + m) % ln
+                shifted.append(data[j])
+
+            # set A and X
+            STATE.rX.update(STATE.rX.sign, *shifted[: STATE.rX.BYTES])
+            STATE.rA.update(STATE.rA.sign, *shifted[STATE.rX.BYTES :])
 
     def _get_address(self) -> int:
         match self.index:
