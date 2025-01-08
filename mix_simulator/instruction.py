@@ -178,6 +178,10 @@ class Instruction:
             case OpCode.SH:
                 self._shift()
 
+            # MOVE
+            case OpCode.MOVE:
+                self._move()
+
             # Unknown OpCode
             case _:
                 raise ValueError(f"Unsupported opcode {self.opcode}")
@@ -532,6 +536,25 @@ class Instruction:
             # set A and X
             STATE.rX.update(STATE.rX.sign, *shifted[: STATE.rX.BYTES])
             STATE.rA.update(STATE.rA.sign, *shifted[STATE.rX.BYTES :])
+
+    def _move(self) -> None:
+        # if F = 0, nothing happens
+        words = self.field
+        if words == 0:
+            return
+
+        # if the src and dst are the same, nothing happens
+        src = self._get_address()
+        dst = int(STATE.rI1)
+        if src == dst:
+            return
+
+        # if src < dst, start at the end so we don't overwrite later src indices
+        indices = range(words - 1, -1, -1) if src < dst else range(words)
+
+        # move the data
+        for i in indices:
+            STATE.memory[dst + i] = STATE.memory[src + i]
 
     def _get_address(self) -> int:
         match self.index:
