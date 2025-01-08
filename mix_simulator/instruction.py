@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple
+from typing import List, Tuple
 
 from mix_simulator.byte import (
     BITS_IN_BYTE,
@@ -8,6 +8,7 @@ from mix_simulator.byte import (
     bytes_to_int,
     int_to_bytes,
 )
+from mix_simulator.character_code import char_to_byte
 from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import (
@@ -181,6 +182,17 @@ class Instruction:
             # MOVE
             case OpCode.MOVE:
                 self._move()
+
+            # NOP
+            case OpCode.NOP:
+                pass
+
+            # CONV
+            case OpCode.CONV:
+                if self.field == 0:
+                    self._num()
+                elif self.field == 1:
+                    self._char()
 
             # Unknown OpCode
             case _:
@@ -555,6 +567,44 @@ class Instruction:
         # move the data
         for i in indices:
             STATE.memory[dst + i] = STATE.memory[src + i]
+
+    def _num(self) -> None:
+        a = STATE.rA
+        x = STATE.rX
+        digits = [
+            b.val % 10
+            for b in (a.r1, a.r2, a.r3, a.r4, a.r5, x.r1, x.r2, x.r3, x.r4, x.r5)
+        ]
+
+        # build a decimal number from the base 10 digits
+        num = 0
+        for d in digits:
+            num = (num * 10) + d
+
+        # store back into A as bytes
+        _, data = int_to_bytes(num)
+        a.update(a.sign, *data[: a.BYTES])
+
+    def _char(self) -> None:
+        a = STATE.rA
+        x = STATE.rX
+        num = abs(int(a))
+        # little endian base 10 byte representation of the value in A
+        char_bytes: List[Byte] = []
+
+        # convert int to char bytes
+        while num:
+            char = str(num % 10)
+            char_bytes.append(char_to_byte(char))
+            num //= 10
+
+        # pad with "0" char to fill A and X
+        while len(char_bytes) < a.BYTES + x.BYTES:
+            char_bytes.append(char_to_byte("0"))
+
+        # store back into A and X
+        x.update(x.sign, *char_bytes[: x.BYTES])
+        a.update(a.sign, *char_bytes[x.BYTES :])
 
     def _get_address(self) -> int:
         match self.index:
