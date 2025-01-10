@@ -6,6 +6,12 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+mixsim = "mix_simulator.simulator:run"
+
+[tool.uv]
+package = true
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "--cov=mix_simulator --cov-report=term-missing"

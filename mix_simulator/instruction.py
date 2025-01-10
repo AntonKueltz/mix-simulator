@@ -37,6 +37,15 @@ class Instruction:
         self.modification = divmod(self.field, 8)
         self.opcode = opcode
 
+    def __repr__(self) -> str:
+        op = self.opcode.name
+        addr = self.address
+        idx = f",{self.index}" if self.index else ""
+        left, right = self.modification
+        lr = f"({left}:{right})" if self.field != 5 else ""
+
+        return f"{op} {addr}{idx}{lr}"
+
     @staticmethod
     def from_word(word: Word) -> Instruction:
         address = bytes_to_int((word.b1, word.b2))
