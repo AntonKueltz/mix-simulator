@@ -3,9 +3,11 @@ from unittest import TestCase
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.register import WordRegister
 from mix_simulator.word import Word
+
+STATE = SimulatorState.initial_state()
 
 
 class TestMul(TestCase):
@@ -15,7 +17,7 @@ class TestMul(TestCase):
         expected_a = WordRegister(False, Byte(0), Byte(1), Byte(2), Byte(3), Byte(4))
         expected_x = WordRegister(False, Byte(5), Byte(4), Byte(3), Byte(2), Byte(1))
 
-        instruction = Instruction(1000, 0, 5, OpCode.MUL)
+        instruction = Instruction(1000, 0, 5, OpCode.MUL, STATE)
         instruction.execute()
 
         self.assertEqual(expected_a, STATE.rA)
@@ -27,7 +29,7 @@ class TestMul(TestCase):
         expected_a = WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(0), Byte(0))
         expected_x = WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(3), Byte(32))
 
-        instruction = Instruction(1000, 0, 8 + 1, OpCode.MUL)
+        instruction = Instruction(1000, 0, 8 + 1, OpCode.MUL, STATE)
         instruction.execute()
 
         self.assertEqual(expected_a, STATE.rA)
@@ -39,7 +41,7 @@ class TestMul(TestCase):
         expected_a = WordRegister(False, Byte(1), Byte(36), Byte(0), Byte(3), Byte(32))
         expected_x = WordRegister(False, Byte(8), Byte(0), Byte(0), Byte(0), Byte(0))
 
-        instruction = Instruction(1000, 0, 5, OpCode.MUL)
+        instruction = Instruction(1000, 0, 5, OpCode.MUL, STATE)
         instruction.execute()
 
         self.assertEqual(expected_a, STATE.rA)

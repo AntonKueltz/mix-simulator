@@ -4,10 +4,12 @@ from unittest import TestCase
 from mix_simulator.byte import BYTE_UPPER_LIMIT, Byte, int_to_bytes
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import BYTES_IN_WORD, Word
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestMaximum(TestCase):
@@ -65,11 +67,13 @@ class TestMaximum(TestCase):
         STATE.rI1.update(False, Byte(len(test_input)))
 
         # run the program
-        instruction = Instruction.from_word(STATE.memory[STATE.program_counter])
+        instruction = Instruction.from_word(STATE.memory[STATE.program_counter], STATE)
         STATE.program_counter += 1
         while not (instruction.opcode == OpCode(5) and instruction.field == 2):
             instruction.execute()
-            instruction = Instruction.from_word(STATE.memory[STATE.program_counter])
+            instruction = Instruction.from_word(
+                STATE.memory[STATE.program_counter], STATE
+            )
             STATE.program_counter += 1
 
         # max value should be in A

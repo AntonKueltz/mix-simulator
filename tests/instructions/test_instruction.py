@@ -6,10 +6,12 @@ from mix_simulator.byte import Byte, BYTE_UPPER_LIMIT
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import IndexRegister
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import Word
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestInstruction(TestCase):
@@ -51,7 +53,7 @@ class TestInstruction(TestCase):
         eaddress, eindex, emodification, eopcode = expected
 
         word = Word(sign, *data)
-        instruction = Instruction.from_word(word)
+        instruction = Instruction.from_word(word, STATE)
 
         self.assertEqual(eaddress, instruction.address)
         self.assertEqual(eindex, instruction.index)
@@ -60,12 +62,12 @@ class TestInstruction(TestCase):
 
     @parameterized.expand(
         [
-            (Instruction(0, 1, 5, OpCode.NOP), STATE.rI1),
-            (Instruction(0, 2, 5, OpCode.NOP), STATE.rI2),
-            (Instruction(0, 3, 5, OpCode.NOP), STATE.rI3),
-            (Instruction(0, 4, 5, OpCode.NOP), STATE.rI4),
-            (Instruction(0, 5, 5, OpCode.NOP), STATE.rI5),
-            (Instruction(0, 6, 5, OpCode.NOP), STATE.rI6),
+            (Instruction(0, 1, 5, OpCode.NOP, STATE), STATE.rI1),
+            (Instruction(0, 2, 5, OpCode.NOP, STATE), STATE.rI2),
+            (Instruction(0, 3, 5, OpCode.NOP, STATE), STATE.rI3),
+            (Instruction(0, 4, 5, OpCode.NOP, STATE), STATE.rI4),
+            (Instruction(0, 5, 5, OpCode.NOP, STATE), STATE.rI5),
+            (Instruction(0, 6, 5, OpCode.NOP, STATE), STATE.rI6),
         ]
     )
     def test_get_address(

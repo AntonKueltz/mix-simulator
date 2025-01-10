@@ -5,10 +5,12 @@ from unittest import TestCase
 from mix_simulator.byte import BYTE_UPPER_LIMIT, Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import BYTES_IN_WORD, Word
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestMove(TestCase):
@@ -25,21 +27,21 @@ class TestMove(TestCase):
     @parameterized.expand(
         [
             # MOVE 1000 (to 999)
-            (Instruction(1000, 0, 3, OpCode.MOVE), (Byte(39), Byte(15))),
+            (Instruction(1000, 0, 3, OpCode.MOVE, STATE), (Byte(39), Byte(15))),
             # MOVE 1000 (to 999)
-            (Instruction(1, 1, 3, OpCode.MOVE), (Byte(39), Byte(15))),
+            (Instruction(1, 1, 3, OpCode.MOVE, STATE), (Byte(39), Byte(15))),
             # MOVE 1000 (to 1001)
-            (Instruction(1000, 0, 3, OpCode.MOVE), (Byte(41), Byte(15))),
+            (Instruction(1000, 0, 3, OpCode.MOVE, STATE), (Byte(41), Byte(15))),
             # MOVE 1000 (to 1001)
-            (Instruction(-1, 1, 3, OpCode.MOVE), (Byte(41), Byte(15))),
+            (Instruction(-1, 1, 3, OpCode.MOVE, STATE), (Byte(41), Byte(15))),
             # MOVE 1000 (to 1000)
-            (Instruction(1000, 0, 3, OpCode.MOVE), (Byte(40), Byte(15))),
+            (Instruction(1000, 0, 3, OpCode.MOVE, STATE), (Byte(40), Byte(15))),
             # MOVE 1000 (to 1000)
-            (Instruction(0, 1, 3, OpCode.MOVE), (Byte(40), Byte(15))),
+            (Instruction(0, 1, 3, OpCode.MOVE, STATE), (Byte(40), Byte(15))),
             # MOVE 1000 (to 2000)
-            (Instruction(1000, 0, 3, OpCode.MOVE), (Byte(16), Byte(31))),
+            (Instruction(1000, 0, 3, OpCode.MOVE, STATE), (Byte(16), Byte(31))),
             # MOVE 1000 (to 100)
-            (Instruction(1000, 0, 3, OpCode.MOVE), (Byte(36), Byte(1))),
+            (Instruction(1000, 0, 3, OpCode.MOVE, STATE), (Byte(36), Byte(1))),
         ]
     )
     def test_execute(self, instruction: Instruction, i1: Tuple[Byte, Byte]) -> None:
@@ -60,7 +62,7 @@ class TestMove(TestCase):
         # set I1 to |+|1|36| = 100
         STATE.rI1.update(False, Byte(36), Byte(1))
         sdata, ddata = self._random_words(2)
-        instruction = Instruction(1000, 0, 0, OpCode.MOVE)
+        instruction = Instruction(1000, 0, 0, OpCode.MOVE, STATE)
 
         src = instruction._get_address()
         dst = int(STATE.rI1)

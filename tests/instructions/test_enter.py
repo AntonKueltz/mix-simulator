@@ -4,9 +4,11 @@ from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import IndexRegister, WordRegister
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestEnter(TestCase):
@@ -18,42 +20,42 @@ class TestEnter(TestCase):
         [
             # ENTA 2000
             (
-                Instruction(2000, 0, 2, OpCode.ATA),
+                Instruction(2000, 0, 2, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(31), Byte(16)),
             ),
             # ENTA -2000
             (
-                Instruction(-2000, 0, 2, OpCode.ATA),
+                Instruction(-2000, 0, 2, OpCode.ATA, STATE),
                 WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(31), Byte(16)),
             ),
             # ENNA 2000
             (
-                Instruction(2000, 0, 3, OpCode.ATA),
+                Instruction(2000, 0, 3, OpCode.ATA, STATE),
                 WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(31), Byte(16)),
             ),
             # ENNA -2000
             (
-                Instruction(-2000, 0, 3, OpCode.ATA),
+                Instruction(-2000, 0, 3, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(31), Byte(16)),
             ),
             # ENTA 2000,1
             (
-                Instruction(2000, 1, 2, OpCode.ATA),
+                Instruction(2000, 1, 2, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(46), Byte(56)),
             ),
             # ENTA -2000,1
             (
-                Instruction(-2000, 1, 2, OpCode.ATA),
+                Instruction(-2000, 1, 2, OpCode.ATA, STATE),
                 WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(15), Byte(40)),
             ),
             # ENNA 2000,1
             (
-                Instruction(2000, 1, 3, OpCode.ATA),
+                Instruction(2000, 1, 3, OpCode.ATA, STATE),
                 WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(46), Byte(56)),
             ),
             # ENNA -2000,1
             (
-                Instruction(-2000, 1, 3, OpCode.ATA),
+                Instruction(-2000, 1, 3, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(15), Byte(40)),
             ),
         ]
@@ -83,7 +85,7 @@ class TestEnter(TestCase):
     def test_execute_enter_index_register(
         self, opcode: OpCode, register: IndexRegister, variant: int, sign: bool
     ) -> None:
-        instruction = Instruction(100, 1, variant, opcode)
+        instruction = Instruction(100, 1, variant, opcode, STATE)
         expected = IndexRegister(sign, Byte(17), Byte(12))
 
         instruction.execute()

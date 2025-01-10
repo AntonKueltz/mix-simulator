@@ -4,8 +4,10 @@ from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import WordRegister
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import Word
+
+STATE = SimulatorState.initial_state()
 
 
 class TestDiv(TestCase):
@@ -16,7 +18,7 @@ class TestDiv(TestCase):
         expected_a = WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(5))
         expected_x = WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(2))
 
-        instruction = Instruction(1000, 0, 5, OpCode.DIV)
+        instruction = Instruction(1000, 0, 5, OpCode.DIV, STATE)
         instruction.execute()
 
         self.assertEqual(expected_a, STATE.rA)

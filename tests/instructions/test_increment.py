@@ -4,9 +4,11 @@ from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import IndexRegister, WordRegister
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestIncrement(TestCase):
@@ -20,32 +22,32 @@ class TestIncrement(TestCase):
         [
             # INCA 200
             (
-                Instruction(200, 0, 0, OpCode.ATA),
+                Instruction(200, 0, 0, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(18), Byte(48)),
             ),
             # INCA -200
             (
-                Instruction(-200, 0, 0, OpCode.ATA),
+                Instruction(-200, 0, 0, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(12), Byte(32)),
             ),
             # INCA 200,1
             (
-                Instruction(200, 1, 0, OpCode.ATA),
+                Instruction(200, 1, 0, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(20), Byte(20)),
             ),
             # DECA 200
             (
-                Instruction(200, 0, 1, OpCode.ATA),
+                Instruction(200, 0, 1, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(12), Byte(32)),
             ),
             # DECA -200
             (
-                Instruction(-200, 0, 1, OpCode.ATA),
+                Instruction(-200, 0, 1, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(18), Byte(48)),
             ),
             # DECA 200,1
             (
-                Instruction(200, 1, 1, OpCode.ATA),
+                Instruction(200, 1, 1, OpCode.ATA, STATE),
                 WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(10), Byte(60)),
             ),
         ]
@@ -57,7 +59,7 @@ class TestIncrement(TestCase):
     def test_overflow(self) -> None:
         # set A to |+|63|63|63|63|63| = INT_MAX
         STATE.rA.update(False, Byte(63), Byte(63), Byte(63), Byte(63), Byte(63))
-        instruction = Instruction(1, 0, 0, OpCode.ATA)
+        instruction = Instruction(1, 0, 0, OpCode.ATA, STATE)
         expected = WordRegister(False, Byte(0), Byte(0), Byte(0), Byte(0), Byte(0))
 
         instruction.execute()
@@ -70,7 +72,7 @@ class TestIncrement(TestCase):
 
         # set A to |-|63|63|63|63|63| = INT_MAX
         STATE.rA.update(True, Byte(63), Byte(63), Byte(63), Byte(63), Byte(63))
-        instruction = Instruction(1, 0, 1, OpCode.ATA)
+        instruction = Instruction(1, 0, 1, OpCode.ATA, STATE)
         expected = WordRegister(True, Byte(0), Byte(0), Byte(0), Byte(0), Byte(0))
 
         instruction.execute()
@@ -103,7 +105,7 @@ class TestIncrement(TestCase):
     ) -> None:
         # set I1 to |+|1|36| = 100
         register.update(False, Byte(36), Byte(1))
-        instruction = Instruction(100, 1, variant, opcode)
+        instruction = Instruction(100, 1, variant, opcode, STATE)
 
         instruction.execute()
 

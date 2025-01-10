@@ -4,7 +4,9 @@ from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
 from mix_simulator.register import WordRegister
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
+
+STATE = SimulatorState.initial_state()
 
 
 class TestConversion(TestCase):
@@ -15,19 +17,19 @@ class TestConversion(TestCase):
         STATE.rX.update(False, Byte(30), Byte(30), Byte(47), Byte(57), Byte(37))
 
         # NUM 0
-        instruction = Instruction(0, 0, 0, OpCode.CONV)
+        instruction = Instruction(0, 0, 0, OpCode.CONV, STATE)
         instruction.execute()
         expected = -12977700
         self.assertEqual(expected, int(STATE.rA))
 
         # INCA 1
-        instruction = Instruction(1, 0, 0, OpCode.ATA)
+        instruction = Instruction(1, 0, 0, OpCode.ATA, STATE)
         instruction.execute()
         expected = -12977699
         self.assertEqual(expected, int(STATE.rA))
 
         # CHAR 0
-        instruction = Instruction(0, 0, 1, OpCode.CONV)
+        instruction = Instruction(0, 0, 1, OpCode.CONV, STATE)
         instruction.execute()
         expected_a = WordRegister(
             True, Byte(30), Byte(30), Byte(31), Byte(32), Byte(39)

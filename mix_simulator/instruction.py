@@ -17,7 +17,7 @@ from mix_simulator.register import (
     JumpRegister,
     WordRegister,
 )
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import BYTES_IN_WORD, Word
 
 
@@ -29,13 +29,22 @@ class Instruction:
     field: int
     modification: Tuple[int, int]
     opcode: OpCode
+    state: SimulatorState
 
-    def __init__(self, address: int, index: int, field: int, opcode: OpCode) -> None:
+    def __init__(
+        self,
+        address: int,
+        index: int,
+        field: int,
+        opcode: OpCode,
+        state: SimulatorState,
+    ) -> None:
         self.address = address
         self.index = index
         self.field = field
         self.modification = divmod(self.field, 8)
         self.opcode = opcode
+        self.state = state
 
     def __repr__(self) -> str:
         op = self.opcode.name
@@ -47,7 +56,7 @@ class Instruction:
         return f"{op} {addr}{idx}{lr}"
 
     @staticmethod
-    def from_word(word: Word) -> Instruction:
+    def from_word(word: Word, state: SimulatorState) -> Instruction:
         address = bytes_to_int((word.b1, word.b2))
         if word.sign:
             address *= -1
@@ -56,7 +65,7 @@ class Instruction:
         field = word.b4.val
         opcode = OpCode(word.b5.val)
 
-        return Instruction(address, index, field, opcode)
+        return Instruction(address, index, field, opcode, state)
 
     def execute(self) -> None:
         match self.opcode:
@@ -72,117 +81,117 @@ class Instruction:
 
             # LD*
             case OpCode.LDA:
-                self._load(STATE.rA)
+                self._load(self.state.rA)
             case OpCode.LDX:
-                self._load(STATE.rX)
+                self._load(self.state.rX)
             case OpCode.LD1:
-                self._load(STATE.rI1)
+                self._load(self.state.rI1)
             case OpCode.LD2:
-                self._load(STATE.rI2)
+                self._load(self.state.rI2)
             case OpCode.LD3:
-                self._load(STATE.rI3)
+                self._load(self.state.rI3)
             case OpCode.LD4:
-                self._load(STATE.rI4)
+                self._load(self.state.rI4)
             case OpCode.LD5:
-                self._load(STATE.rI5)
+                self._load(self.state.rI5)
             case OpCode.LD6:
-                self._load(STATE.rI6)
+                self._load(self.state.rI6)
 
             # LD*N
             case OpCode.LDAN:
-                self._load(STATE.rA, negative=True)
+                self._load(self.state.rA, negative=True)
             case OpCode.LDXN:
-                self._load(STATE.rX, negative=True)
+                self._load(self.state.rX, negative=True)
             case OpCode.LD1N:
-                self._load(STATE.rI1, negative=True)
+                self._load(self.state.rI1, negative=True)
             case OpCode.LD2N:
-                self._load(STATE.rI2, negative=True)
+                self._load(self.state.rI2, negative=True)
             case OpCode.LD3N:
-                self._load(STATE.rI3, negative=True)
+                self._load(self.state.rI3, negative=True)
             case OpCode.LD4N:
-                self._load(STATE.rI4, negative=True)
+                self._load(self.state.rI4, negative=True)
             case OpCode.LD5N:
-                self._load(STATE.rI5, negative=True)
+                self._load(self.state.rI5, negative=True)
             case OpCode.LD6N:
-                self._load(STATE.rI6, negative=True)
+                self._load(self.state.rI6, negative=True)
 
             # ST*
             case OpCode.STA:
-                self._store(STATE.rA)
+                self._store(self.state.rA)
             case OpCode.STX:
-                self._store(STATE.rX)
+                self._store(self.state.rX)
             case OpCode.ST1:
-                self._store(STATE.rI1)
+                self._store(self.state.rI1)
             case OpCode.ST2:
-                self._store(STATE.rI2)
+                self._store(self.state.rI2)
             case OpCode.ST3:
-                self._store(STATE.rI3)
+                self._store(self.state.rI3)
             case OpCode.ST4:
-                self._store(STATE.rI4)
+                self._store(self.state.rI4)
             case OpCode.ST5:
-                self._store(STATE.rI5)
+                self._store(self.state.rI5)
             case OpCode.ST6:
-                self._store(STATE.rI6)
+                self._store(self.state.rI6)
             case OpCode.STJ:
-                self._store(STATE.rJ)
+                self._store(self.state.rJ)
             case OpCode.STZ:
                 self._store(ZERO_REGISTER)
 
             # ENT* / ENN* / INC* / DEC*
             case OpCode.ATA:
-                self._address_transfer(STATE.rA)
+                self._address_transfer(self.state.rA)
             case OpCode.ATX:
-                self._address_transfer(STATE.rX)
+                self._address_transfer(self.state.rX)
             case OpCode.AT1:
-                self._address_transfer(STATE.rI1)
+                self._address_transfer(self.state.rI1)
             case OpCode.AT2:
-                self._address_transfer(STATE.rI2)
+                self._address_transfer(self.state.rI2)
             case OpCode.AT3:
-                self._address_transfer(STATE.rI3)
+                self._address_transfer(self.state.rI3)
             case OpCode.AT4:
-                self._address_transfer(STATE.rI4)
+                self._address_transfer(self.state.rI4)
             case OpCode.AT5:
-                self._address_transfer(STATE.rI5)
+                self._address_transfer(self.state.rI5)
             case OpCode.AT6:
-                self._address_transfer(STATE.rI6)
+                self._address_transfer(self.state.rI6)
 
             # CMP*
             case OpCode.CMPA:
-                self._compare(STATE.rA)
+                self._compare(self.state.rA)
             case OpCode.CMPX:
-                self._compare(STATE.rX)
+                self._compare(self.state.rX)
             case OpCode.CMP1:
-                self._compare(STATE.rI1)
+                self._compare(self.state.rI1)
             case OpCode.CMP2:
-                self._compare(STATE.rI2)
+                self._compare(self.state.rI2)
             case OpCode.CMP3:
-                self._compare(STATE.rI3)
+                self._compare(self.state.rI3)
             case OpCode.CMP4:
-                self._compare(STATE.rI4)
+                self._compare(self.state.rI4)
             case OpCode.CMP5:
-                self._compare(STATE.rI5)
+                self._compare(self.state.rI5)
             case OpCode.CMP6:
-                self._compare(STATE.rI6)
+                self._compare(self.state.rI6)
 
             # J*
             case OpCode.JMP:
                 self._jump(None)
             case OpCode.JA:
-                self._jump(STATE.rA)
+                self._jump(self.state.rA)
             case OpCode.JX:
-                self._jump(STATE.rX)
+                self._jump(self.state.rX)
             case OpCode.J1:
-                self._jump(STATE.rI1)
+                self._jump(self.state.rI1)
             case OpCode.J2:
-                self._jump(STATE.rI2)
+                self._jump(self.state.rI2)
             case OpCode.J3:
-                self._jump(STATE.rI3)
+                self._jump(self.state.rI3)
             case OpCode.J4:
-                self._jump(STATE.rI4)
+                self._jump(self.state.rI4)
             case OpCode.J5:
-                self._jump(STATE.rI5)
+                self._jump(self.state.rI5)
             case OpCode.J6:
-                self._jump(STATE.rI6)
+                self._jump(self.state.rI6)
 
             # S*
             case OpCode.SH:
@@ -212,7 +221,7 @@ class Instruction:
     ) -> None:
         # load word at address
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
 
         # select relevant fields
         sign, data = word.load_fields(*self.modification)
@@ -237,7 +246,7 @@ class Instruction:
 
         # get the word to update
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
 
         # store the data in the word
         if sign is not None:
@@ -253,66 +262,68 @@ class Instruction:
     def _add(self, negative: bool = False) -> None:
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # add V to A
-        a = int(STATE.rA)
+        a = int(self.state.rA)
         a += -v if negative else v
 
         # store back into A
-        sign, result = int_to_bytes(a, padding=STATE.rA.BYTES)
+        sign, result = int_to_bytes(a, padding=self.state.rA.BYTES)
 
-        if len(result) == STATE.rA.BYTES + 1:
-            STATE.overflow = True
-            result = result[: STATE.rA.BYTES]
+        if len(result) == self.state.rA.BYTES + 1:
+            self.state.overflow = True
+            result = result[: self.state.rA.BYTES]
 
-        STATE.rA.update(sign, *result)
+        self.state.rA.update(sign, *result)
 
     def _mul(self) -> None:
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # multiple A by V
-        a = int(STATE.rA)
+        a = int(self.state.rA)
         product = a * v
 
         # store back into A and X
-        sign, result = int_to_bytes(product, padding=STATE.rA.BYTES + STATE.rX.BYTES)
+        sign, result = int_to_bytes(
+            product, padding=self.state.rA.BYTES + self.state.rX.BYTES
+        )
         # X gets the low bytes
-        STATE.rX.update(sign, *result[: STATE.rX.BYTES])
+        self.state.rX.update(sign, *result[: self.state.rX.BYTES])
         # A gets the high bytes
-        STATE.rA.update(sign, *result[STATE.rX.BYTES :])
+        self.state.rA.update(sign, *result[self.state.rX.BYTES :])
 
     def _div(self) -> None:
         # load the value in the instruction as an integer
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
         sign, data = word.load_fields(*self.modification)
         v = bytes_to_int(data, sign)
 
         # divide AX by V
-        a = int(STATE.rA)
-        x = int(STATE.rX)
+        a = int(self.state.rA)
+        x = int(self.state.rX)
         ax = (abs(a) << (BYTES_IN_WORD * BITS_IN_BYTE)) + abs(x)
         ax = -ax if a < 0 else ax
         quotient, remainder = divmod(ax, v)
-        sign = sign != STATE.rA.sign
+        sign = sign != self.state.rA.sign
 
         # store quotient back into A
-        _, result = int_to_bytes(quotient, padding=STATE.rA.BYTES)
-        if len(result) > STATE.rA.BYTES:
-            STATE.overflow = True
-            result = result[: STATE.rA.BYTES]
-        STATE.rA.update(sign, *result)
+        _, result = int_to_bytes(quotient, padding=self.state.rA.BYTES)
+        if len(result) > self.state.rA.BYTES:
+            self.state.overflow = True
+            result = result[: self.state.rA.BYTES]
+        self.state.rA.update(sign, *result)
 
         # store remainder back into X
-        _, result = int_to_bytes(remainder, padding=STATE.rX.BYTES)
-        STATE.rX.update(sign, *result)
+        _, result = int_to_bytes(remainder, padding=self.state.rX.BYTES)
+        self.state.rX.update(sign, *result)
 
     def _address_transfer(self, register: IndexRegister | WordRegister) -> None:
         match self.field:
@@ -357,7 +368,7 @@ class Instruction:
         sign, result = int_to_bytes(i, padding=register.BYTES)
 
         if len(result) == register.BYTES + 1:
-            STATE.overflow = True
+            self.state.overflow = True
             result = result[: register.BYTES]
 
         register.update(sign, *result)
@@ -365,12 +376,12 @@ class Instruction:
     def _compare(self, register: IndexRegister | WordRegister) -> None:
         # an equal comparison always occurs when F is (0:0)
         if self.field == 0:
-            STATE.comparison_indicator = ComparisonIndicator.EQUAL
+            self.state.comparison_indicator = ComparisonIndicator.EQUAL
             return
 
         # load word at address
         m = self._get_address()
-        word = STATE.memory[m]
+        word = self.state.memory[m]
 
         # select relevant fields
         lsign, ldata = register.compare_fields(*self.modification)
@@ -381,11 +392,11 @@ class Instruction:
         right = bytes_to_int(rdata, rsign)
 
         if left < right:
-            STATE.comparison_indicator = ComparisonIndicator.LESS
+            self.state.comparison_indicator = ComparisonIndicator.LESS
         elif left == right:
-            STATE.comparison_indicator = ComparisonIndicator.EQUAL
+            self.state.comparison_indicator = ComparisonIndicator.EQUAL
         else:
-            STATE.comparison_indicator = ComparisonIndicator.GREATER
+            self.state.comparison_indicator = ComparisonIndicator.GREATER
 
     def _jump(self, register: IndexRegister | WordRegister | None) -> None:
         criteria_met = False
@@ -396,49 +407,49 @@ class Instruction:
             if self.field == 0 or self.field == 1:
                 criteria_met = True
             # JOV - if the overflow toggle is on, it is turned off and a JMP occurs
-            elif self.field == 2 and STATE.overflow:
+            elif self.field == 2 and self.state.overflow:
                 criteria_met = True
-                STATE.overflow = False
+                self.state.overflow = False
             # JNOV - if the overflow toggle is off, a JMP occurs; otherwise it is turned off
             elif self.field == 3:
-                if not STATE.overflow:
+                if not self.state.overflow:
                     criteria_met = True
                 else:
-                    STATE.overflow = False
+                    self.state.overflow = False
             # JL
             elif (
                 self.field == 4
-                and STATE.comparison_indicator == ComparisonIndicator.LESS
+                and self.state.comparison_indicator == ComparisonIndicator.LESS
             ):
                 criteria_met = True
             # JE
             elif (
                 self.field == 5
-                and STATE.comparison_indicator == ComparisonIndicator.EQUAL
+                and self.state.comparison_indicator == ComparisonIndicator.EQUAL
             ):
                 criteria_met = True
             # JG
             elif (
                 self.field == 6
-                and STATE.comparison_indicator == ComparisonIndicator.GREATER
+                and self.state.comparison_indicator == ComparisonIndicator.GREATER
             ):
                 criteria_met = True
             # JGE
             elif (
                 self.field == 7
-                and STATE.comparison_indicator != ComparisonIndicator.LESS
+                and self.state.comparison_indicator != ComparisonIndicator.LESS
             ):
                 criteria_met = True
             # JNE
             elif (
                 self.field == 8
-                and STATE.comparison_indicator != ComparisonIndicator.EQUAL
+                and self.state.comparison_indicator != ComparisonIndicator.EQUAL
             ):
                 criteria_met = True
             # JLE
             elif (
                 self.field == 9
-                and STATE.comparison_indicator != ComparisonIndicator.GREATER
+                and self.state.comparison_indicator != ComparisonIndicator.GREATER
             ):
                 criteria_met = True
         elif register is not None:
@@ -468,11 +479,11 @@ class Instruction:
         # update J (JSJ does not update J)
         if self.opcode != OpCode.JMP or self.field != 1:
             # program counter containes the _next_ instruction (word)
-            hi, lo = divmod(STATE.program_counter, BYTE_UPPER_LIMIT)
-            STATE.rJ.update(Byte(lo), Byte(hi))
+            hi, lo = divmod(self.state.program_counter, BYTE_UPPER_LIMIT)
+            self.state.rJ.update(Byte(lo), Byte(hi))
 
         # perform the jump
-        STATE.program_counter = self._get_address()
+        self.state.program_counter = self._get_address()
 
     def _shift(self) -> None:
         m = self._get_address()
@@ -481,7 +492,7 @@ class Instruction:
 
         # reduce m by the amount of bytes in the register(s) to circular shift
         if self.field == 4 or self.field == 5:
-            m %= STATE.rA.BYTES + STATE.rX.BYTES
+            m %= self.state.rA.BYTES + self.state.rX.BYTES
         # shift by 0 is a NOP
         if m == 0:
             return
@@ -489,21 +500,21 @@ class Instruction:
 
         # SLA and SRA
         if self.field == 0 or self.field == 1:
-            if m >= STATE.rA.BYTES:
+            if m >= self.state.rA.BYTES:
                 # all bytes were shifted out of A
                 data = [Byte(0), Byte(0), Byte(0), Byte(0), Byte(0)]
             else:
-                a = abs(int(STATE.rA))
+                a = abs(int(self.state.rA))
                 new_value = (
                     a << bits_to_shift if self.field == 0 else a >> bits_to_shift
                 )
                 _, data = int_to_bytes(new_value)
 
             # set A
-            STATE.rA.update(STATE.rA.sign, *data[: STATE.rA.BYTES])
+            self.state.rA.update(self.state.rA.sign, *data[: self.state.rA.BYTES])
         # SLAX and SRAX
         elif self.field == 2 or self.field == 3:
-            if m >= STATE.rA.BYTES + STATE.rX.BYTES:
+            if m >= self.state.rA.BYTES + self.state.rX.BYTES:
                 # all bytes were shifted out of A and X
                 data = [
                     Byte(0),
@@ -518,21 +529,21 @@ class Instruction:
                     Byte(0),
                 ]
             else:
-                ax = (abs(int(STATE.rA)) << (BITS_IN_BYTE * STATE.rA.BYTES)) + abs(
-                    (int(STATE.rX))
-                )
+                ax = (
+                    abs(int(self.state.rA)) << (BITS_IN_BYTE * self.state.rA.BYTES)
+                ) + abs((int(self.state.rX)))
                 new_value = (
                     ax << bits_to_shift if self.field == 2 else ax >> bits_to_shift
                 )
                 _, data = int_to_bytes(new_value)
-                data = data[: STATE.rA.BYTES + STATE.rX.BYTES]
+                data = data[: self.state.rA.BYTES + self.state.rX.BYTES]
 
             # set A and X
-            STATE.rX.update(STATE.rX.sign, *data[: STATE.rX.BYTES])
-            STATE.rA.update(STATE.rA.sign, *data[STATE.rX.BYTES :])
+            self.state.rX.update(self.state.rX.sign, *data[: self.state.rX.BYTES])
+            self.state.rA.update(self.state.rA.sign, *data[self.state.rX.BYTES :])
         # SLC and SRC
         elif self.field == 4 or self.field == 5:
-            rx, ra = STATE.rX, STATE.rA
+            rx, ra = self.state.rX, self.state.rA
             # little endian representation of AX
             data = [
                 rx.r5,
@@ -555,8 +566,8 @@ class Instruction:
                 shifted.append(data[j])
 
             # set A and X
-            STATE.rX.update(STATE.rX.sign, *shifted[: STATE.rX.BYTES])
-            STATE.rA.update(STATE.rA.sign, *shifted[STATE.rX.BYTES :])
+            self.state.rX.update(self.state.rX.sign, *shifted[: self.state.rX.BYTES])
+            self.state.rA.update(self.state.rA.sign, *shifted[self.state.rX.BYTES :])
 
     def _move(self) -> None:
         # if F = 0, nothing happens
@@ -566,7 +577,7 @@ class Instruction:
 
         # if the src and dst are the same, nothing happens
         src = self._get_address()
-        dst = int(STATE.rI1)
+        dst = int(self.state.rI1)
         if src == dst:
             return
 
@@ -575,11 +586,11 @@ class Instruction:
 
         # move the data
         for i in indices:
-            STATE.memory[dst + i] = STATE.memory[src + i]
+            self.state.memory[dst + i] = self.state.memory[src + i]
 
     def _num(self) -> None:
-        a = STATE.rA
-        x = STATE.rX
+        a = self.state.rA
+        x = self.state.rX
         digits = [
             b.val % 10
             for b in (a.r1, a.r2, a.r3, a.r4, a.r5, x.r1, x.r2, x.r3, x.r4, x.r5)
@@ -595,8 +606,8 @@ class Instruction:
         a.update(a.sign, *data[: a.BYTES])
 
     def _char(self) -> None:
-        a = STATE.rA
-        x = STATE.rX
+        a = self.state.rA
+        x = self.state.rX
         num = abs(int(a))
         # little endian base 10 byte representation of the value in A
         char_bytes: List[Byte] = []
@@ -620,16 +631,16 @@ class Instruction:
             case 0:
                 return self.address
             case 1:
-                return self.address + int(STATE.rI1)
+                return self.address + int(self.state.rI1)
             case 2:
-                return self.address + int(STATE.rI2)
+                return self.address + int(self.state.rI2)
             case 3:
-                return self.address + int(STATE.rI3)
+                return self.address + int(self.state.rI3)
             case 4:
-                return self.address + int(STATE.rI4)
+                return self.address + int(self.state.rI4)
             case 5:
-                return self.address + int(STATE.rI5)
+                return self.address + int(self.state.rI5)
             case 6:
-                return self.address + int(STATE.rI6)
+                return self.address + int(self.state.rI6)
             case _:
                 raise ValueError(f"Index must be value in range 0-6. Got {self.index}")

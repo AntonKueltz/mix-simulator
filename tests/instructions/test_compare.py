@@ -5,10 +5,12 @@ from mix_simulator.byte import Byte
 from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import Word
 
 from parameterized import parameterized  # type: ignore
+
+STATE = SimulatorState.initial_state()
 
 
 class TestCompare(TestCase):
@@ -71,7 +73,7 @@ class TestCompare(TestCase):
     ) -> None:
         # data is in little endian so that update function behaves correctly
         STATE.rA.update(sign, *data)
-        instruction = Instruction(2000, 0, field, OpCode.CMPA)
+        instruction = Instruction(2000, 0, field, OpCode.CMPA, STATE)
 
         instruction.execute()
 
@@ -89,6 +91,6 @@ class TestCompare(TestCase):
     )
     def test_execute_index_register(self, opcode: OpCode) -> None:
         # CMPi 2000(2:3) => |+|X|0|0|i4|i5| < |+|X|0|1|X|X|
-        instruction = Instruction(2000, 0, 2 * 8 + 3, opcode)
+        instruction = Instruction(2000, 0, 2 * 8 + 3, opcode, STATE)
         instruction.execute()
         self.assertEqual(ComparisonIndicator.LESS, STATE.comparison_indicator)

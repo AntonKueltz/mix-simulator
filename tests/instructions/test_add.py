@@ -3,9 +3,11 @@ from unittest import TestCase
 from mix_simulator.byte import Byte
 from mix_simulator.instruction import Instruction
 from mix_simulator.opcode import OpCode
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.register import WordRegister
 from mix_simulator.word import Word
+
+STATE = SimulatorState.initial_state()
 
 
 class TestAdd(TestCase):
@@ -14,7 +16,7 @@ class TestAdd(TestCase):
         STATE.rA.update(False, Byte(22), Byte(2), Byte(1), Byte(18), Byte(19))
         expected = WordRegister(False, Byte(20), Byte(54), Byte(6), Byte(3), Byte(8))
 
-        instruction = Instruction(1000, 0, 5, OpCode.ADD)
+        instruction = Instruction(1000, 0, 5, OpCode.ADD, STATE)
         instruction.execute()
 
         self.assertEqual(expected, STATE.rA)

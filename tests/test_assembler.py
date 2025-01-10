@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 
 from mix_simulator.byte import Byte
 from mix_simulator.assembler import Assembler
-from mix_simulator.simulator import STATE
+from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import Word
 
 
@@ -32,11 +32,12 @@ class TestAssembler(TestCase):
             Word(False, Byte(0), Byte(3), Byte(0), Byte(2), Byte(43)),
             Word(False, Byte(0), Byte(0), Byte(0), Byte(2), Byte(5)),
         ]
+        state = SimulatorState.initial_state()
 
-        assembler = Assembler("maximum.mix")
+        assembler = Assembler("maximum.mix", state)
         with patch("builtins.open", mock_open(read_data=program)):
             instructions = assembler.parse_program()
             assembler.write_program_to_memory(instructions)
 
         for i, word in enumerate(expected):
-            self.assertEqual(word, STATE.memory[i])
+            self.assertEqual(word, state.memory[i])
