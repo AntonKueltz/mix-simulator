@@ -52,6 +52,13 @@ class OpCode(IntEnum):
     STJ = 32  # store J
     STZ = 33  # store 0
 
+    # Input-output Operators
+    JBUS = 34  # unit f busy?
+    IOC = 35  # control, unit f
+    IN = 36  # input, unit f
+    OUT = 37  # output, unit f
+    JRED = 38  # unit f ready?
+
     # Jump Operators
     # Depends on the F (op variant) value:
     # 0 = JMP, 1 = JSJ, 2 = JOV, 3 = JNOV, 4 = JL, 5 = JE, 6 = JG, 7 = JGE, 8 = JNE, 9 = JLE

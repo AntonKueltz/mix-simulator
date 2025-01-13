@@ -65,6 +65,13 @@ class Operator(StrEnum):
     STJ = "STJ"  # store J
     STZ = "STZ"  # store 0
 
+    # Input-output Operators (34-38)
+    JBUS = "JBUS"  # unit f busy?
+    IOC = "IOC"  # control, unit f
+    IN = "IN"  # input, unit f
+    OUT = "OUT"  # output, unit f
+    JRED = "JRED"  # unit f ready?
+
     # Jump Operators (C 39-47)
     # JMP depends on the F (op variant) value:
     # 0 = JMP, 1 = JSJ, 2 = JOV, 3 = JNOV, 4 = JL, 5 = JE, 6 = JG, 7 = JGE, 8 = JNE, 9 = JLE
@@ -233,6 +240,11 @@ class Operator(StrEnum):
             "STX": (31, 5),
             "STJ": (32, 2),
             "STZ": (33, 5),
+            "JBUS": (34, 0),
+            "IOC": (35, 0),
+            "IN": (36, 0),
+            "OUT": (37, 0),
+            "JRED": (38, 0),
             "JMP": (39, 0),
             "JSJ": (39, 1),
             "JOV": (39, 2),
