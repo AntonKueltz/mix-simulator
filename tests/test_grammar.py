@@ -19,7 +19,6 @@ CHANGEM     ENT2    0,3
             J3P     LOOP
 EXIT        HALT    0"""
         expected = [
-            # loc       op      address    index field
             ("X", "EQU", "1000", None, None),
             (None, "ORIG", "3000", None, None),
             ("MAXIMUM", "STJ", "EXIT", None, None),
@@ -55,7 +54,6 @@ BUF0    EQU     2000
 BUF1    EQU     BUF0+25
         ORIG    3000"""
         expected = [
-            # loc       op      address    index field
             ("L", "EQU", "500", None, None),
             ("PRINTER", "EQU", "18", None, None),
             ("PRIME", "EQU", "-1", None, None),
