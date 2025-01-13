@@ -17,7 +17,7 @@ CHANGEM     ENT2    0,3
             LDA     X,3
             DEC3    1
             J3P     LOOP
-EXIT        HALT    0"""
+EXIT        HLT     0"""
         expected = [
             ("X", "EQU", "1000", None, None),
             (None, "ORIG", "3000", None, None),
@@ -30,7 +30,7 @@ EXIT        HALT    0"""
             (None, "LDA", "X", "3", None),
             (None, "DEC3", "1", None, None),
             (None, "J3P", "LOOP", None, None),
-            ("EXIT", "HALT", "0", None, None),
+            ("EXIT", "HLT", "0", None, None),
         ]
 
         for i, line in enumerate(program.split("\n")):
@@ -68,7 +68,34 @@ START   IOC     0(PRINTER)
         CMPA    PRIME,3
         INC3    1
         JG      6B
-        JMP     2B"""
+        JMP     2B
+2H      OUT     TITLE(PRINTER)
+        ENT4    BUF1+10
+        ENT5    -50
+2H      INC5    L+1
+4H      LDA     PRIME,5
+        CHAR
+        STX     0,4(1:4)
+        DEC4    1
+        DEC5    50
+        J5P     4B
+        OUT     0,4(PRINTER)
+        LD4     24,4
+        J5N     2B
+        HLT
+        ORIG    PRIME+1
+        CON     2
+        ORIG    BUF0-5
+TITLE   ALF     FIRST
+        ALF     _FIVE
+        ALF     _HUND
+        ALF     RED_P
+        ALF     RIMES
+        ORIG    BUF0+24
+        CON     BUF1+10
+        ORIG    BUF1+24
+        CON     BUF0+10
+        END     START"""
         expected = [
             ("L", "EQU", "500", None, None),
             ("PRINTER", "EQU", "18", None, None),
@@ -92,6 +119,33 @@ START   IOC     0(PRINTER)
             (None, "INC3", "1", None, None),
             (None, "JG", "6B", None, None),
             (None, "JMP", "2B", None, None),
+            ("2H", "OUT", "TITLE", None, "(PRINTER)"),
+            (None, "ENT4", "BUF1+10", None, None),
+            (None, "ENT5", "-50", None, None),
+            ("2H", "INC5", "L+1", None, None),
+            ("4H", "LDA", "PRIME", "5", None),
+            (None, "CHAR", None, None, None),
+            (None, "STX", "0", "4", "(1:4)"),
+            (None, "DEC4", "1", None, None),
+            (None, "DEC5", "50", None, None),
+            (None, "J5P", "4B", None, None),
+            (None, "OUT", "0", "4", "(PRINTER)"),
+            (None, "LD4", "24", "4", None),
+            (None, "J5N", "2B", None, None),
+            (None, "HLT", None, None, None),
+            (None, "ORIG", "PRIME+1", None, None),
+            (None, "CON", "2", None, None),
+            (None, "ORIG", "BUF0-5", None, None),
+            ("TITLE", "ALF", "FIRST", None, None),
+            (None, "ALF", "_FIVE", None, None),
+            (None, "ALF", "_HUND", None, None),
+            (None, "ALF", "RED_P", None, None),
+            (None, "ALF", "RIMES", None, None),
+            (None, "ORIG", "BUF0+24", None, None),
+            (None, "CON", "BUF1+10", None, None),
+            (None, "ORIG", "BUF1+24", None, None),
+            (None, "CON", "BUF0+10", None, None),
+            (None, "END", "START", None, None),
         ]
 
         for i, line in enumerate(program.split("\n")):

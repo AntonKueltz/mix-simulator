@@ -13,7 +13,7 @@ class OpCode(IntEnum):
     DIV = 4  # divide
 
     # Conversion Operators
-    # CONV depends on the F (op variant) value: 0 = NUM, 1 = CHAR, 2 = HALT
+    # CONV depends on the F (op variant) value: 0 = NUM, 1 = CHAR, 2 = HLT
     CONV = 5
 
     # Miscellaneous Operators

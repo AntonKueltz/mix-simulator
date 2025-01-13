@@ -19,7 +19,7 @@ class TestAssembler(TestCase):
                     LDA     X,3
                     DEC3    1
                     J3P     LOOP
-        EXIT        HALT    0"""
+        EXIT        HLT     0"""
         expected = [
             Word(False, Byte(0), Byte(9), Byte(0), Byte(2), Byte(32)),
             Word(False, Byte(0), Byte(0), Byte(1), Byte(2), Byte(51)),

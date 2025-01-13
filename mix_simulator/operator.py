@@ -22,7 +22,7 @@ class Operator(StrEnum):
     # Depends on the F (op variant) value: 0 = NUM, 1 = CHAR, 2 = HALT
     NUM = "NUM"
     CHAR = "CHAR"
-    HALT = "HALT"
+    HLT = "HLT"
 
     # Miscellaneous Operators (C 6-7)
     # SH depends on the F (op variant) value:
@@ -206,7 +206,7 @@ class Operator(StrEnum):
             "DIV": (4, 5),
             "NUM": (5, 0),
             "CHAR": (5, 1),
-            "HALT": (5, 2),
+            "HLT": (5, 2),
             "SLA": (6, 0),
             "SRA": (6, 1),
             "SLAX": (6, 2),
