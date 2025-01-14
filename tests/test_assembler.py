@@ -6,20 +6,43 @@ from mix_simulator.assembler import Assembler
 from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import Word
 
+from parameterized import parameterized  # type: ignore
+
 
 class TestAssembler(TestCase):
+    @parameterized.expand(
+        [
+            ("500", {}, 0, 500),
+            ("-1", {}, 0, -1),
+            ("BUF0+25", {"BUF0": 2000}, 0, 2025),
+            ("PRIME+L", {"PRIME": -1, "L": 500}, 0, 499),
+            ("*+3", {}, 3000, 3003),
+            ("***", {}, -30, 900),
+        ]
+    )
+    def test_parse_address(
+        self, addr: str, symtab: dict[str, int], word: int, expected: int
+    ) -> None:
+        assembler = Assembler("", SimulatorState.initial_state())
+        assembler.symbol_table = symtab
+
+        actual = assembler._parse_address(addr, word)
+
+        self.assertEqual(expected, actual)
+
     def test_assemble_maximum(self) -> None:
         program = """X      EQU     1000
-        MAXIMUM     STJ     EXIT
-        INIT        ENT3    0,1
-                    JMP     CHANGEM
-        LOOP        CMPA    X,3
-                    JGE     *+3
-        CHANGEM     ENT2    0,3
-                    LDA     X,3
-                    DEC3    1
-                    J3P     LOOP
-        EXIT        HLT     0"""
+            ORIG    0
+MAXIMUM     STJ     EXIT
+INIT        ENT3    0,1
+            JMP     CHANGEM
+LOOP        CMPA    X,3
+            JGE     *+3
+CHANGEM     ENT2    0,3
+            LDA     X,3
+            DEC3    1
+            J3P     LOOP
+EXIT        HLT"""
         expected = [
             Word(False, Byte(0), Byte(9), Byte(0), Byte(2), Byte(32)),
             Word(False, Byte(0), Byte(0), Byte(1), Byte(2), Byte(51)),
