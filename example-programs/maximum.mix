@@ -1,12 +1,15 @@
+* store the array at 1000 and the program at 3000
 X           EQU     1000
             ORIG    3000
+
 MAXIMUM     STJ     EXIT
 INIT        ENT3    0,1
             JMP     CHANGEM
 LOOP        CMPA    X,3
             JGE     *+3
+* store the new max in A and the index in I2
 CHANGEM     ENT2    0,3
             LDA     X,3
             DEC3    1
             J3P     LOOP
-EXIT        HALT    0
+EXIT        HLT

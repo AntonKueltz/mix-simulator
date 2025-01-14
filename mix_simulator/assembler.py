@@ -39,6 +39,10 @@ class Assembler:
         # read in the assembly instructions
         with open(self.mix_file, "r") as f:
             for line in f:
+                # ignore comments (start with *) and empty lines
+                if not line.strip() or line.startswith("*"):
+                    continue
+
                 parsed = self.process_line(line.rstrip())
                 if parsed:
                     instructions.append(parsed)
@@ -116,7 +120,6 @@ class Assembler:
                 Byte(instruction.field),
                 Byte(instruction.opcode),
             )
-            print(i, word)
             self.state.memory[i] = word
 
     def _parse_address(self, address: str, i: int) -> int:

@@ -11,6 +11,7 @@ from mix_simulator.byte import (
 from mix_simulator.character_code import char_to_byte
 from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.opcode import OpCode
+from mix_simulator.operator import Operator
 from mix_simulator.register import (
     ZERO_REGISTER,
     IndexRegister,
@@ -47,13 +48,13 @@ class Instruction:
         self.state = state
 
     def __repr__(self) -> str:
-        op = self.opcode.name
+        op = Operator.from_code_and_field(self.opcode, self.field)
         addr = self.address
         idx = f",{self.index}" if self.index else ""
         left, right = self.modification
         lr = f"({left}:{right})" if self.field != 5 else ""
 
-        return f"{op} {addr}{idx}{lr}"
+        return f"{op.name} {addr}{idx}{lr}"
 
     @staticmethod
     def from_word(word: Word, state: SimulatorState) -> Instruction:

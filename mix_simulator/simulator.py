@@ -69,6 +69,7 @@ class Simulator:
             w = Word(sign, *reversed(data))
             self.state.memory[1000 + idx + 1] = w
 
+        self.state.program_counter = 3000
         self.state.rI1.update(False, Byte(len(values)))
         # END HACK
 
