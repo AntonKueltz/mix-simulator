@@ -8,7 +8,7 @@ from mix_simulator.byte import (
     bytes_to_int,
     int_to_bytes,
 )
-from mix_simulator.character_code import char_to_byte
+from mix_simulator.character_code import byte_to_char, char_to_byte
 from mix_simulator.comparison_indicator import ComparisonIndicator
 from mix_simulator.opcode import OpCode
 from mix_simulator.operator import Operator
@@ -206,6 +206,13 @@ class Instruction:
             case OpCode.NOP:
                 pass
 
+            # I/O
+            case OpCode.IOC:
+                # we assume the device is ready
+                pass
+            case OpCode.OUT:
+                self._out()
+
             # CONV
             case OpCode.CONV:
                 if self.field == 0:
@@ -227,11 +234,16 @@ class Instruction:
         # select relevant fields
         sign, data = word.load_fields(*self.modification)
 
-        # LDi is invalid if setting any of the upper 3 bytes
-        if isinstance(register, IndexRegister) and len(data) > 2:
-            raise ValueError(
-                "The LDi instruction is undefined if it would result in setting bytes 1, 2 or 3 to anything but zero."
-            )
+        if isinstance(register, IndexRegister):
+            val = bytes_to_int(data)
+
+            # LDi is invalid if setting any bytes other than the lowest two are set
+            if val >= (1 << (BITS_IN_BYTE * 2)):
+                raise ValueError(
+                    "The LDi instruction is undefined if it would result in setting bytes 1, 2 or 3 to anything but zero."
+                )
+            else:
+                data = data[-2:]
 
         if negative:
             sign = not sign
@@ -588,6 +600,26 @@ class Instruction:
         # move the data
         for i in indices:
             self.state.memory[dst + i] = self.state.memory[src + i]
+
+    def _out(self) -> None:
+        match self.field:
+            # line printer
+            case 18:
+                block_size = 24
+                for i in range(block_size):
+                    m = self._get_address()
+                    word = self.state.memory[m + i]
+
+                    for byte in (word.b1, word.b2, word.b3, word.b4, word.b5):
+                        char = byte_to_char(byte)
+                        print(char, end="")
+
+                # newline
+                print("")
+            case _:
+                raise NotImplementedError(
+                    "Only the line print (field=18) is supported for I/O"
+                )
 
     def _num(self) -> None:
         a = self.state.rA

@@ -2,11 +2,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 from re import match, split
 
-from mix_simulator.byte import BYTE_UPPER_LIMIT, Byte
+from mix_simulator.byte import BYTE_UPPER_LIMIT, Byte, int_to_bytes
+from mix_simulator.character_code import char_to_byte
 from mix_simulator.grammar import BINARY_OP, INSTRUCTION
 from mix_simulator.operator import Operator
 from mix_simulator.simulator import SimulatorState
-from mix_simulator.word import Word
+from mix_simulator.word import BYTES_IN_WORD, Word
 
 
 @dataclass
@@ -24,6 +25,7 @@ class Assembler:
     here: dict[int, list[int]]
     state: SimulatorState
     word: int
+    w_value_index: int
 
     def __init__(self, mix_file: str, state: SimulatorState) -> None:
         self.mix_file = mix_file
@@ -31,6 +33,8 @@ class Assembler:
         self.here = defaultdict(list)
         self.state = state
         self.word = 0
+        # store w values in ascending memory location, starting with the last cell
+        self.w_value_index = state.memory.words - 1
 
     def parse_program(self) -> list[tuple[int, AssemblyInstruction]]:
         """Read the assembly program, translate to machine code, and store in memory."""
@@ -58,34 +62,56 @@ class Assembler:
         if addr is None:
             addr = "0"
 
+        # update the symbol table
+        if loc is not None:
+            # special "here" tag
+            if match(r"^[0-9]H$", loc):
+                i = int(loc[0])
+                self.here[i].append(self.word)
+            else:
+                self.symbol_table[loc] = self.word
+
+        # check for assembler directives
         match op:
             case "EQU":
+                # have the location field resolve to the address value in the symbol table
                 self.symbol_table[loc] = self._parse_address(addr, self.word)
                 self.word += 1
                 return None
             case "ORIG":
+                # update where we are writing instructions in memory
                 self.word = self._parse_address(addr, self.word)
                 return None
             case "CON":
-                raise NotImplementedError("CON is not yet implemented.")
+                # store the addr as a word in the memory location of the directive
+                w_value = self._parse_address(addr, self.word)
+                sign, bs = int_to_bytes(w_value, padding=BYTES_IN_WORD)
+                self.state.memory[self.word] = Word(sign, *reversed(bs))
+                self.word += 1
+                return None
             case "ALF":
-                raise NotImplementedError("ALF is not yet implemented.")
+                # we use _ in place of space to make the language easier to parse
+                chars = addr.replace("_", " ")
+                bs = [char_to_byte(c) for c in chars]
+                # store the chars as a word in the memory location of the directive
+                self.state.memory[self.word] = Word(False, *bs)
+                self.word += 1
+                return None
+            case "END":
+                # tells the program counter where the first instruction is
+                self.state.program_counter = self._parse_address(addr, self.word)
+                return None
             case _:
                 operator = Operator(op)
                 code, dfield = operator.to_code_and_field()
 
-                # update the symbol table
-                if loc is not None:
-                    # special "here" tag
-                    if match(r"^[0-9]H$", loc):
-                        i = int(loc[0])
-                        self.here[i].append(self.word)
-                    else:
-                        self.symbol_table[loc] = self.word
-
                 # set defaults
                 idx = 0 if idx is None else int(idx)
-                field = dfield if field is None else int(field)
+                if field is None:
+                    field = dfield
+                else:
+                    # remove parens before parsing field value
+                    field = self._parse_address(field.strip("()"), self.word)
 
                 # return instruction and location in memory
                 result = (self.word, AssemblyInstruction(loc, code, addr, idx, field))
@@ -109,7 +135,7 @@ class Assembler:
             else:
                 address = self._parse_address(instruction.address, i)
 
-            ahi, alo = divmod(address, BYTE_UPPER_LIMIT)
+            ahi, alo = divmod(abs(address), BYTE_UPPER_LIMIT)
             sign = address < 0
 
             word = Word(
@@ -149,6 +175,21 @@ class Assembler:
                     f"{address} is was not found in the symbol table during parsing."
                 )
 
+        # w-value
+        elif address.startswith("=") and address.endswith("="):
+            address = address.strip("=")
+            value = self._parse_address(address, i)
+
+            # convert the expression to a word and store the word
+            sign, bs = int_to_bytes(value, padding=BYTES_IN_WORD)
+            word = Word(sign, *reversed(bs))
+            self.state.memory[self.w_value_index] = word
+
+            # returning the address where the word was stored
+            result = self.w_value_index
+            negative = False
+            self.w_value_index -= 1
+
         # binary operator expression
         else:
             # disambiguate leftmost * as an address not an op
@@ -161,7 +202,13 @@ class Assembler:
             # parse recursively to support nested expressions
             lval = self._parse_address(left, i)
             rval = self._parse_address(right, i)
-            result = eval(f"{lval} {op} {rval}")
+
+            match op:
+                # ":" needs to be interpreted in a nonstandard way
+                case ":":
+                    result = 8 * lval + rval
+                case _:
+                    result = eval(f"{lval} {op} {rval}")
 
         # apply sign
         return -result if negative else result

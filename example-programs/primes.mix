@@ -3,6 +3,7 @@ PRINTER EQU     18
 PRIME   EQU     -1
 BUF0    EQU     2000
 BUF1    EQU     BUF0+25
+
         ORIG    3000
 START   IOC     0(PRINTER)
         LD1     =1-L=
@@ -34,8 +35,10 @@ START   IOC     0(PRINTER)
         LD4     24,4
         J5N     2B
         HLT
+
         ORIG    PRIME+1
         CON     2
+
         ORIG    BUF0-5
 TITLE   ALF     FIRST
         ALF     _FIVE
