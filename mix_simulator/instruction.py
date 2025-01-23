@@ -21,6 +21,8 @@ from mix_simulator.register import (
 from mix_simulator.simulator import SimulatorState
 from mix_simulator.word import BYTES_IN_WORD, Word
 
+INSTRUCTION_CACHE: dict[Word, Instruction] = {}
+
 
 class Instruction:
     """An instruction that can be executed by the simulator."""
@@ -58,6 +60,13 @@ class Instruction:
 
     @staticmethod
     def from_word(word: Word, state: SimulatorState) -> Instruction:
+        global INSTRUCTION_CACHE
+
+        if word in INSTRUCTION_CACHE:
+            instruction = INSTRUCTION_CACHE[word]
+            instruction.state = state
+            return instruction
+
         address = bytes_to_int((word.b1, word.b2))
         if word.sign:
             address *= -1
@@ -66,7 +75,9 @@ class Instruction:
         field = word.b4.val
         opcode = OpCode(word.b5.val)
 
-        return Instruction(address, index, field, opcode, state)
+        instruction = Instruction(address, index, field, opcode, state)
+        INSTRUCTION_CACHE[word] = instruction
+        return instruction
 
     def execute(self) -> None:
         match self.opcode:

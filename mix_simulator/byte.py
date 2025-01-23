@@ -1,4 +1,5 @@
 from collections.abc import Reversible
+from functools import cache
 from typing import List, Tuple
 
 BITS_IN_BYTE = 6
@@ -27,6 +28,7 @@ class Byte:
         raise TypeError(f"Cannot compare Byte to {type(other)}")
 
 
+@cache
 def int_to_bytes(val: int, padding: int = 0) -> Tuple[bool, List[Byte]]:
     """Returns the passed integer in _little endian_ (0 index is lowest byte) representation."""
     absval = abs(val)

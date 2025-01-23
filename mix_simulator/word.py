@@ -24,6 +24,11 @@ class Word:
     b4: Byte
     b5: Byte
 
+    def __hash__(self) -> int:
+        return hash(
+            (self.sign, self.b1.val, self.b2.val, self.b3.val, self.b4.val, self.b5.val)
+        )
+
     def update(self, i: int, b: Byte) -> None:
         match i:
             case 1:
